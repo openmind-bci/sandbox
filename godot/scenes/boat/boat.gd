@@ -34,6 +34,7 @@ func _ready() -> void:
 	course = TwinCourse.from_file(course_path)
 	boat = BoatModel.from_course(course)
 	_world.setup(boat, course)
+	WorldKit.hud_backdrop($Hud)
 	_view.boat = boat
 	_view.course = course
 	_controller.command_accepted.connect(_on_command)

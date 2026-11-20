@@ -124,12 +124,16 @@ func _build_buoys() -> void:
 		var spot := Vector2(w.x, w.y)
 		var material := WorldKit.glowing(OpenMindTheme.DANGER, 1.2)
 		_buoy_materials.append(material)
-		WorldKit.cylinder(self, 0.35, 0.6, to_godot(spot, 0.3), material)
-		WorldKit.cylinder(self, 0.3, 0.5, to_godot(spot, 0.85), white)
-		WorldKit.sphere(self, 0.12, to_godot(spot, 1.2), material)
+		# Scanned buoy (Poly Haven), partly under water; a light on top shows the
+		# next one. Built buoy when the model is not downloaded.
+		var buoy := WorldKit.model(self, "ocean_buoy", to_godot(spot, -0.55), i * 1.3, 1.0)
+		if buoy == null:
+			WorldKit.cylinder(self, 0.35, 0.6, to_godot(spot, 0.3), material)
+			WorldKit.cylinder(self, 0.3, 0.5, to_godot(spot, 0.85), white)
+		WorldKit.sphere(self, 0.12, to_godot(spot, 2.3 if buoy != null else 1.2), material)
 		WorldKit.ring(self, w.z, to_godot(spot, 0.06), WorldKit.glowing(
 				OpenMindTheme.PRIMARY_LIGHT, 0.6))
-		WorldKit.label(self, str(i + 1), to_godot(spot, 2.0), 0.01)
+		WorldKit.label(self, str(i + 1), to_godot(spot, 3.0), 0.01)
 
 
 func _build_boat() -> void:
@@ -152,8 +156,15 @@ func _build_boat() -> void:
 	WorldKit.box(_boat_node, Vector3(boat.length * 0.72, 0.04, boat.width * 0.92),
 			Vector3(-0.2, 0.37, 0), deck)
 	WorldKit.cylinder(_boat_node, 0.05, 3.2, Vector3(0.2, 1.95, 0), dark)
-	_sail = WorldKit.box(_boat_node, Vector3(1.4, 2.6, 0.02), Vector3(-0.55, 1.9, 0),
+	# The sail swings out from the mast (boom at about 35°), so it shows from behind.
+	var boom := Node3D.new()
+	boom.position = Vector3(0.2, 0, 0)
+	boom.rotation.y = 0.6
+	_boat_node.add_child(boom)
+	_sail = WorldKit.box(boom, Vector3(1.4, 2.6, 0.02), Vector3(-0.75, 1.9, 0),
 			WorldKit.plain(Color("#FFFDF5"), 0.8))
+	WorldKit.model(_boat_node, "lifebuoy", Vector3(-1.05, 0.39, boat.width / 2.0 + 0.04), 0.0,
+			0.55)
 	_rudder = Node3D.new()
 	_rudder.position = Vector3(-boat.length * 0.58, 0.0, 0)
 	_boat_node.add_child(_rudder)

@@ -46,6 +46,7 @@ func _ready() -> void:
 	_view.course = course
 	_view.minimap = true
 	_world.setup(robot, course)
+	WorldKit.hud_backdrop($Hud)
 	restart()
 	_controller.command_accepted.connect(_on_command)
 	_controller.command_refused.connect(_on_refused)

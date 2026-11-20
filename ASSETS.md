@@ -21,6 +21,15 @@ resolution, to stay light).
 | `godot/assets/polyhaven/aerial_grass_rock/` | Aerial Grass Rock by Rob Tuytel, [Poly Haven](https://polyhaven.com/a/aerial_grass_rock) | CC0 | bird landscape |
 | `godot/assets/polyhaven/brown_planks_03/` | Brown Planks 03 by Rob Tuytel, [Poly Haven](https://polyhaven.com/a/brown_planks_03) | CC0 | boat deck |
 | `godot/assets/polyhaven/kloofendal_48d_partly_cloudy_puresky/` | Kloofendal 48d Partly Cloudy (Pure Sky) by Greg Zaal, Jarod Guest, [Poly Haven](https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky) | CC0 | bird and boat sky |
+| `godot/assets/polyhaven/wheelchair_01/` | Wheelchair 01 by Garreth Dean, [Poly Haven](https://polyhaven.com/a/wheelchair_01) | CC0 | wheelchair (scanned model) |
+| `godot/assets/polyhaven/sofa_03/` | Sofa 03 by Fran Calvente, [Poly Haven](https://polyhaven.com/a/sofa_03) | CC0 | wheelchair living room |
+| `godot/assets/polyhaven/coffee_table_round_01/` | Coffee Table Round 01 by Ulan Cabanilla, [Poly Haven](https://polyhaven.com/a/coffee_table_round_01) | CC0 | wheelchair living room |
+| `godot/assets/polyhaven/vintage_day_bed/` | Vintage Day Bed by Aron Łyczek, [Poly Haven](https://polyhaven.com/a/vintage_day_bed) | CC0 | wheelchair bedroom |
+| `godot/assets/polyhaven/painted_wooden_nightstand/` | Painted Wooden Nightstand by Kirill Sannikov, [Poly Haven](https://polyhaven.com/a/painted_wooden_nightstand) | CC0 | wheelchair bedroom |
+| `godot/assets/polyhaven/potted_plant_02/` | Potted Plant 02 by Rico Cilliers, [Poly Haven](https://polyhaven.com/a/potted_plant_02) | CC0 | wheelchair living room |
+| `godot/assets/polyhaven/Barrel_01/` | Barrel 01 by Jorge Camacho, [Poly Haven](https://polyhaven.com/a/Barrel_01) | CC0 | robot twin obstacles |
+| `godot/assets/polyhaven/ocean_buoy/` | Ocean Buoy by Mateusz Sadek, [Poly Haven](https://polyhaven.com/a/ocean_buoy) | CC0 | boat buoys |
+| `godot/assets/polyhaven/lifebuoy/` | Lifebuoy by Hank Kaamura, [Poly Haven](https://polyhaven.com/a/lifebuoy) | CC0 | boat deck |
 | `godot/addons/openmind/fonts/SpaceGrotesk.ttf` | Florian Karsten, [Space Grotesk](https://github.com/floriankarsten/space-grotesk) (via Google Fonts) | SIL Open Font License 1.1 (`fonts/OFL.txt`) | variable font |
 
 The 3D panel shows the FreeSurfer fsaverage brain, downloaded on each machine by

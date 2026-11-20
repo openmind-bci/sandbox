@@ -1,8 +1,8 @@
 """Download the Poly Haven assets of the Godot scenes (all CC0).
 
-Textures (1K JPG: colour, OpenGL normal, roughness) and HDRI skies (1K HDR) go to
-``godot/assets/polyhaven/<id>/``; they are committed through Git LFS and credited
-in ASSETS.md. Run again after changing the lists below:
+Textures (1K JPG: colour, OpenGL normal, roughness), HDRI skies (1K HDR) and
+scanned models (1K glTF with their textures) go to ``godot/assets/polyhaven/<id>/``;
+they are committed through Git LFS and credited in ASSETS.md. Run again after changing the lists below:
 
     uv run python tools/fetch_polyhaven.py
 
@@ -33,6 +33,18 @@ HDRIS = {
     "small_empty_room_3": "robot twin and wheelchair lighting",
     "kloofendal_48d_partly_cloudy_puresky": "bird and boat sky",
 }
+#: Model id -> where it is used (1K glTF with its textures; scanned, CC0).
+MODELS = {
+    "wheelchair_01": "wheelchair",
+    "sofa_03": "wheelchair living room",
+    "coffee_table_round_01": "wheelchair living room",
+    "vintage_day_bed": "wheelchair bedroom",
+    "painted_wooden_nightstand": "wheelchair bedroom",
+    "potted_plant_02": "wheelchair living room",
+    "Barrel_01": "robot twin obstacles",
+    "ocean_buoy": "boat buoys",
+    "lifebuoy": "boat deck",
+}
 MAPS = {"Diffuse": "diff", "nor_gl": "nor_gl", "Rough": "rough"}
 API = "https://api.polyhaven.com"
 TARGET = Path("godot/assets/polyhaven")
@@ -56,11 +68,16 @@ def download(url: str, path: Path) -> None:
 
 def main() -> int:
     credits = []
-    for asset_id, use in {**TEXTURES, **HDRIS}.items():
+    for asset_id, use in {**TEXTURES, **HDRIS, **MODELS}.items():
         info = get_json(f"{API}/info/{asset_id}")
         files = get_json(f"{API}/files/{asset_id}")
         print(asset_id)
-        if asset_id in HDRIS:
+        if asset_id in MODELS:
+            gltf = files["gltf"]["1k"]["gltf"]  # type: ignore[index]
+            download(gltf["url"], TARGET / asset_id / f"{asset_id}.gltf")
+            for relative, part in gltf.get("include", {}).items():
+                download(part["url"], TARGET / asset_id / relative)
+        elif asset_id in HDRIS:
             hdri = files["hdri"]["1k"]["hdr"]  # type: ignore[index]
             download(hdri["url"], TARGET / asset_id / f"{asset_id}_1k.hdr")
         else:

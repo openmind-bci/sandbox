@@ -91,12 +91,13 @@ func _terrain_mesh() -> ArrayMesh:
 		for j in CELLS:
 			var a := i * (CELLS + 1) + j
 			var b := a + CELLS + 1
+			# Clockwise seen from above: the front faces of Godot point up.
 			tool.add_index(a)
-			tool.add_index(a + 1)
 			tool.add_index(b)
 			tool.add_index(a + 1)
+			tool.add_index(a + 1)
+			tool.add_index(b)
 			tool.add_index(b + 1)
-			tool.add_index(b)
 	tool.generate_normals()
 	return tool.commit()
 

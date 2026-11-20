@@ -132,7 +132,7 @@ func _build_layout() -> void:
 	viewport = SubViewport.new()
 	viewport.own_world_3d = true
 	viewport.handle_input_locally = true
-	viewport.transparent_bg = true  # scenes are drawn over the cockpit background
+	viewport.transparent_bg = false  # 3D scenes draw their own sky
 	container.add_child(viewport)
 
 	var scroll := ScrollContainer.new()

@@ -122,24 +122,29 @@ func _build_apartment() -> void:
 
 
 func _build_furniture() -> void:
-	var fabric := WorldKit.textured("fabric_pattern_07", 2.0)
-	var wood := WorldKit.textured("brown_planks_09", 2.0)
 	var white := WorldKit.plain(Color("#E9ECF2"), 0.7)
-	# Living room: sofa against the left wall and a low table.
-	WorldKit.box(self, Vector3(0.7, 0.45, 1.4), to_godot(Vector2(0.4, 0.95), 0.225), fabric)
-	WorldKit.box(self, Vector3(0.18, 0.4, 1.4), to_godot(Vector2(0.12, 0.95), 0.65), fabric)
-	WorldKit.box(self, Vector3(0.7, 0.05, 0.7), to_godot(Vector2(1.6, 0.8), 0.42), wood)
-	for corner in [Vector2(-0.3, -0.3), Vector2(0.3, -0.3), Vector2(-0.3, 0.3), Vector2(0.3, 0.3)]:
-		WorldKit.box(self, Vector3(0.04, 0.4, 0.04),
-				to_godot(Vector2(1.6, 0.8) + corner, 0.2), wood)
-	# Kitchen counter on its wall.
+	var wood := WorldKit.textured("brown_planks_09", 2.0)
+	# Scanned CC0 furniture (Poly Haven), placed away from the driving paths.
+	# Models face +Z (south in the apartment); yaw PI turns them to face north.
+	var sofa := WorldKit.model(self, "sofa_03", to_godot(Vector2(1.55, 0.48)), PI, 2.4)
+	var table := WorldKit.model(self, "coffee_table_round_01", to_godot(Vector2(1.55, 1.25)),
+			0.0, 0.85)
+	WorldKit.model(self, "potted_plant_02", to_godot(Vector2(3.15, 0.35)), 0.0, 0.5)
+	var bed := WorldKit.model(self, "vintage_day_bed", to_godot(Vector2(4.8, 0.46)), PI, 1.95)
+	WorldKit.model(self, "painted_wooden_nightstand", to_godot(Vector2(5.7, 3.72)), 0.0, 0.45)
+	if sofa == null or table == null or bed == null:
+		_simple_furniture(wood)
+	# Kitchen counter on its wall (built: no light scanned model fits).
 	WorldKit.box(self, Vector3(1.4, 0.9, 0.6), to_godot(Vector2(0.7, 3.55), 0.45), white)
 	WorldKit.box(self, Vector3(1.42, 0.04, 0.62), to_godot(Vector2(0.7, 3.55), 0.92), wood)
-	# Bedroom: bed and bedside table along the top wall.
-	WorldKit.box(self, Vector3(0.9, 0.35, 1.35), to_godot(Vector2(4.1, 3.27), 0.175), wood)
-	WorldKit.box(self, Vector3(0.88, 0.18, 1.3), to_godot(Vector2(4.1, 3.25), 0.44), white)
-	WorldKit.box(self, Vector3(0.7, 0.12, 0.3), to_godot(Vector2(4.1, 3.75), 0.58), fabric)
-	WorldKit.box(self, Vector3(0.4, 0.5, 0.4), to_godot(Vector2(4.75, 3.75), 0.25), wood)
+
+
+## Geometric furniture when the scanned models are not downloaded.
+func _simple_furniture(wood: Material) -> void:
+	var fabric := WorldKit.textured("fabric_pattern_07", 2.0)
+	WorldKit.box(self, Vector3(2.4, 0.45, 0.8), to_godot(Vector2(1.55, 0.48), 0.225), fabric)
+	WorldKit.box(self, Vector3(0.8, 0.45, 0.8), to_godot(Vector2(1.55, 1.25), 0.225), wood)
+	WorldKit.box(self, Vector3(1.95, 0.4, 0.85), to_godot(Vector2(4.8, 0.46), 0.2), fabric)
 
 
 func _build_waypoints(names: PackedStringArray) -> void:
@@ -155,18 +160,21 @@ func _build_waypoints(names: PackedStringArray) -> void:
 func _build_chair() -> void:
 	_chair_node = Node3D.new()
 	add_child(_chair_node)
+	# Scanned wheelchair (Poly Haven, real size); it faces +Z, the chair moves
+	# along its local +X: a quarter turn.
+	if WorldKit.model(_chair_node, "wheelchair_01", Vector3.ZERO, PI / 2.0) != null:
+		return
+	_simple_chair()
+
+
+## Geometric wheelchair when the scanned model is not downloaded.
+func _simple_chair() -> void:
 	var frame := WorldKit.plain(Color("#3A4150"), 0.35, 0.8)
 	var seat := WorldKit.plain(Color("#1B2230"), 0.8)
 	var rubber := WorldKit.plain(Color("#111111"), 0.9)
-	# Local +X is forward.
 	WorldKit.box(_chair_node, Vector3(0.42, 0.06, 0.44), Vector3(0.0, 0.5, 0), seat)
 	WorldKit.box(_chair_node, Vector3(0.06, 0.45, 0.44), Vector3(-0.22, 0.78, 0), seat)
-	WorldKit.box(_chair_node, Vector3(0.14, 0.02, 0.36), Vector3(0.3, 0.12, 0), frame)
 	for side in [-1.0, 1.0]:
-		WorldKit.box(_chair_node, Vector3(0.5, 0.03, 0.03), Vector3(0.05, 0.45, side * 0.22),
-				frame)
-		WorldKit.box(_chair_node, Vector3(0.03, 0.4, 0.03), Vector3(0.25, 0.28, side * 0.2),
-				frame)
 		var holder := Node3D.new()
 		holder.position = Vector3(-0.05, 0.3, side * 0.28)
 		holder.rotation = Vector3(PI / 2.0, 0, 0)
@@ -174,7 +182,6 @@ func _build_chair() -> void:
 		var wheel := WorldKit.cylinder(holder, 0.3, 0.03, Vector3.ZERO, rubber)
 		WorldKit.cylinder(wheel, 0.27, 0.035, Vector3.ZERO, frame)
 		_wheels.append(wheel)
-		WorldKit.sphere(_chair_node, 0.05, Vector3(0.28, 0.05, side * 0.2), rubber)
 
 
 func _place_camera(blend: float) -> void:
@@ -191,8 +198,11 @@ func _place_camera(blend: float) -> void:
 			eye = centre + Vector3(0, maxf(chair.size.x, chair.size.y) * 1.1, 0.01)
 			target = centre
 		_:
-			eye = at - forward * 1.6 + Vector3(0, 1.5, 0)
-			target = at + forward * 0.6 + Vector3(0, 0.5, 0)
+			# Behind and above the chair, kept inside the apartment.
+			eye = at - forward * 1.1 + Vector3(0, 1.7, 0)
+			eye.x = clampf(eye.x, 0.15, chair.size.x - 0.15)
+			eye.z = clampf(eye.z, -chair.size.y + 0.15, -0.15)
+			target = at + forward * 0.8 + Vector3(0, 0.4, 0)
 	camera.position = camera.position.lerp(eye, blend)
 	if camera.position.distance_to(target) > 0.01:
 		camera.look_at(target, Vector3.UP)

@@ -44,6 +44,7 @@ func _ready() -> void:
 	_view.names = names
 	_view.minimap = true
 	_world.setup(chair, course, names)
+	WorldKit.hud_backdrop($Hud)
 	_controller.command_accepted.connect(_on_command)
 	_controller.command_refused.connect(_on_refused)
 	_controller.safety_stop.connect(func(_r: String) -> void: _stop())

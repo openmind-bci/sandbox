@@ -129,6 +129,64 @@ static func label(parent: Node, text: String, position: Vector3, size: float = 0
 	return node
 
 
+## Translucent band behind the heads-up text of a 3D scene, for contrast.
+static func hud_backdrop(hud: Control) -> void:
+	var band := ColorRect.new()
+	band.color = Color(OpenMindTheme.BACKGROUND, 0.6)
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	band.position = hud.position - Vector2(16, 8)
+	band.size = Vector2(hud.size.x + 32, 64)
+	hud.get_parent().add_child.call_deferred(band)
+	hud.get_parent().move_child.call_deferred(band, hud.get_index())
+
+
+## Scanned Poly Haven model, scaled so that its largest horizontal side measures
+## [param size] metres (0 keeps its real size), resting on the ground at
+## [param position], turned by [param yaw] around Y. Returns null when the model
+## has not been downloaded (tools/fetch_polyhaven.py).
+static func model(parent: Node, asset: String, position: Vector3, yaw: float = 0.0,
+		size: float = 0.0) -> Node3D:
+	var path := TEXTURES + asset + "/" + asset + ".gltf"
+	if not ResourceLoader.exists(path):
+		return null
+	var scene: PackedScene = load(path)
+	var holder := Node3D.new()
+	var node: Node3D = scene.instantiate()
+	holder.add_child(node)
+	var box := bounds(node)
+	var scale := 1.0
+	if size > 0.0 and maxf(box.size.x, box.size.z) > 0.0:
+		scale = size / maxf(box.size.x, box.size.z)
+	node.scale = Vector3.ONE * scale
+	# Centre it horizontally and put its lowest point on the ground.
+	var centre := box.get_center()
+	node.position = Vector3(-centre.x, -box.position.y, -centre.z) * scale
+	holder.position = position
+	holder.rotation.y = yaw
+	parent.add_child(holder)
+	return holder
+
+
+## Bounding box of every mesh under [param root], in the frame of [param root].
+static func bounds(root: Node3D) -> AABB:
+	var result := AABB()
+	var first := true
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		stack.append_array(node.get_children())
+		if node is MeshInstance3D and node.mesh != null:
+			var transform := Transform3D.IDENTITY
+			var walker: Node = node
+			while walker != root and walker is Node3D:
+				transform = (walker as Node3D).transform * transform
+				walker = walker.get_parent()
+			var box: AABB = transform * (node as MeshInstance3D).mesh.get_aabb()
+			result = box if first else result.merge(box)
+			first = false
+	return result
+
+
 static func _instance(parent: Node, mesh: Mesh, position: Vector3,
 		material: Material) -> MeshInstance3D:
 	var node := MeshInstance3D.new()

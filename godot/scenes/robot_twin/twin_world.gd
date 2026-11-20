@@ -127,6 +127,9 @@ func _build_room() -> void:
 func _build_course() -> void:
 	var wood := WorldKit.textured("brown_planks_09", 4.0)
 	for o in course.obstacles:
+		# Scanned barrel (Poly Haven) as wide as the obstacle; a post without it.
+		if WorldKit.model(self, "Barrel_01", to_godot(Vector2(o.x, o.y)), o.x, 2.0 * o.z) != null:
+			continue
 		var post := MeshInstance3D.new()
 		var cylinder := CylinderMesh.new()
 		cylinder.top_radius = o.z
@@ -257,8 +260,11 @@ func _place_camera(blend: float) -> void:
 			eye = centre + Vector3(0, 2.2, course.arena.y * 0.9)
 			target = centre
 		_:
+			# Behind and above the robot, above the low walls, kept inside the room.
 			var back := Vector3(-cos(robot.heading), 0, sin(robot.heading))
-			eye = target + back * 0.55 + Vector3(0, 0.32, 0)
+			eye = target + back * 0.7 + Vector3(0, 0.6, 0)
+			eye.x = clampf(eye.x, 0.05, course.arena.x - 0.05)
+			eye.z = clampf(eye.z, -course.arena.y + 0.05, -0.05)
 	camera.position = camera.position.lerp(eye, blend)
 	if camera.position.distance_to(target) > 0.01:
 		camera.look_at(target, Vector3.UP)
