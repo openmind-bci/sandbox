@@ -56,6 +56,21 @@ frame is answered to its sender only:
 {"kind":"error","error":"invalid marker message: label: ...","problems":["label: ..."]}
 ```
 
+## EEG for the signal panel (optional)
+
+`openmind-sandbox bridge --eeg` also reads the LSL EEG stream `openmind-eeg` of
+OpenMind Plug, **read only**, and sends it to the clients about 10 times per
+second:
+
+```json
+{"kind":"eeg","srate":250.0,"labels":["FC3","FC4","C3","Cz","C4","CP3","CP4","CPz"],
+ "unit":"microvolts","t0":1234.5678,"samples":[[1.2,-0.4,...],...]}
+```
+
+Values are rounded to 0.1 µV and a frame carries at most 1 s of samples, so a
+slow client never builds a backlog (8 channels at 250 Hz is about 20 kB/s). When
+the stream disappears, the bridge searches for it again. Nothing is stored.
+
 ## LSL markers stream
 
 Markers received from clients are pushed on an LSL stream that follows the

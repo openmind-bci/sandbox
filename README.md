@@ -43,7 +43,8 @@ Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHA
 | Bird scene: guided calibration with markers to MQTT and LSL | available |
 | Wheelchair scene: apartment, doors opened with `action` | available |
 | Live 3D brain panel (sensor-level band power) | available |
-| Boat scene, signal panel | planned |
+| Signal panel (EEG relayed read-only by `bridge --eeg`) | available |
+| Boat scene, 2D check tool | planned |
 | ESP32 robot firmware | planned |
 | Adapter template for your own object | planned |
 

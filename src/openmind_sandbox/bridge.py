@@ -15,6 +15,9 @@ Godot has no MQTT client: it talks to this bridge over a plain WebSocket.
   ``{"kind": "bridge", "mqtt_connected": ...}`` when the broker link changes, so
   that a scene can stop its objects when the broker is lost.
 
+- **EEG (optional).** With ``eeg=True``, the LSL EEG stream is relayed read-only
+  to the clients for the signal panel (see :mod:`openmind_sandbox.eeg_relay`).
+
 The WebSocket listens on ``127.0.0.1:8765`` by default: local clients only.
 """
 
@@ -175,6 +178,7 @@ class Bridge:
         ws_host: WebSocket listening address (``127.0.0.1``: this machine only).
         ws_port: WebSocket port; ``0`` picks a free one (see :attr:`ws_port`).
         lsl: Publish received markers on the LSL markers stream.
+        eeg: Relay the LSL EEG stream ``openmind-eeg`` to the clients (read only).
     """
 
     mqtt_host: str = DEFAULT_HOST
@@ -182,6 +186,7 @@ class Bridge:
     ws_host: str = DEFAULT_WS_HOST
     ws_port: int = DEFAULT_WS_PORT
     lsl: bool = True
+    eeg: bool = False
     stats: BridgeStats = field(default_factory=BridgeStats)
     _clients: set[ServerConnection] = field(default_factory=set, init=False, repr=False)
     _loop: asyncio.AbstractEventLoop | None = field(default=None, init=False, repr=False)
@@ -208,6 +213,12 @@ class Bridge:
         )
         self._link.subscribe([f"{topics.PREFIX}/#"])
         await asyncio.to_thread(self._link.connect)
+        relay = None
+        if self.eeg:
+            from openmind_sandbox.eeg_relay import EegRelay
+
+            relay = EegRelay(self._broadcast_threadsafe)
+            relay.start()
         try:
             async with serve(self._handle_client, self.ws_host, self.ws_port) as server:
                 self.ws_port = _bound_port(server, self.ws_port)
@@ -216,6 +227,8 @@ class Bridge:
                     on_ready()
                 await self._stop.wait()
         finally:
+            if relay is not None:
+                relay.stop()
             self._link.close()
 
     def stop(self) -> None:

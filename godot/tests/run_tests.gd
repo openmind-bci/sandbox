@@ -37,6 +37,7 @@ func _run() -> void:
 	await test_bird_scene()
 	test_chair()
 	await test_brain()
+	await test_signal_panel()
 	await test_cockpit()
 
 	print("%d checks, %d failed" % [_checks, _failures])
@@ -468,6 +469,49 @@ func test_brain() -> void:
 	panel.set_view("Left")
 	panel.set_band("rel_beta")
 	check(panel.band == "rel_beta" and panel.values.is_empty(), "band switch resets")
+	panel.queue_free()
+	await process_frame
+
+
+func test_signal_panel() -> void:
+	var panel := SignalPanel.new()
+	root.add_child(panel)
+	await process_frame
+	var labels := ["FC3", "FC4", "C3", "Cz", "C4", "CP3", "CP4", "CPz"]
+	var received: Array = []
+	_om.eeg_received.connect(func(f: Dictionary) -> void: received.append(f))
+	var t := 0
+	for chunk in 60:  # 6 s at 250 Hz, in frames of 25 samples
+		var samples: Array = []
+		for i in 25:
+			var row: Array = []
+			for c in labels.size():
+				var v := 20.0 * sin(TAU * 10.0 * t / 250.0 + c)
+				if labels[c] == "CPz":
+					v = 3.0  # flat
+				elif labels[c] == "FC4":
+					v = 900.0  # saturated
+				row.append(v)
+			samples.append(row)
+			t += 1
+		var frame := {"kind": "eeg", "srate": 250.0, "labels": labels, "unit": "microvolts",
+			"t0": 0.0, "samples": samples}
+		_om.handle_frame(JSON.stringify(frame))
+		panel.add_frame(frame)
+	check(received.size() == 60, "eeg frames reach the eeg_received signal")
+	check(panel.buffers.size() == 8 and panel.channel(0).size() == 1250,
+			"8 channels, 5 s window at 250 Hz")
+	check(panel.flags[labels.find("CPz")] == "flat", "flat channel flagged")
+	check(panel.flags[labels.find("FC4")] == "saturated", "saturated channel flagged")
+	check(panel.flags[labels.find("C3")] == "", "normal channel not flagged")
+	var start := Time.get_ticks_usec()
+	var strokes := 0
+	for c in 8:
+		strokes += panel.lane_points(c, Vector2(340, 240)).size()
+	check(strokes > 8 * 200, "every channel is drawn across the plot")
+	check(Time.get_ticks_usec() - start < 20000, "computing 8 channels takes < 20 ms")
+	panel.set_window(10.0)
+	check(panel.buffers[0].size() == 2500, "10 s window")
 	panel.queue_free()
 	await process_frame
 

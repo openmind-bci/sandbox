@@ -340,6 +340,9 @@ def bridge(
     lsl: Annotated[
         bool, typer.Option(help="Publish received markers on the LSL markers stream.")
     ] = True,
+    eeg: Annotated[
+        bool, typer.Option(help="Relay the LSL EEG stream to the cockpit signal panel.")
+    ] = False,
     verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Log every client.")] = False,
 ) -> None:
     """Relay protocol messages between MQTT and WebSocket clients (Godot), markers to LSL."""
@@ -352,12 +355,13 @@ def bridge(
         level=logging.INFO if verbose else logging.WARNING,
         format="%(asctime)s %(levelname)s %(message)s",
     )
-    gateway = Bridge(host, port, ws_host=ws_host, ws_port=ws_port, lsl=lsl)
+    gateway = Bridge(host, port, ws_host=ws_host, ws_port=ws_port, lsl=lsl, eeg=eeg)
 
     def ready() -> None:
         typer.echo(
             f"Bridge: MQTT {host}:{port} <-> ws://{ws_host}:{gateway.ws_port}"
             + (" -> LSL openmind-markers" if lsl else "")
+            + (", relaying LSL openmind-eeg" if eeg else "")
             + ". Ctrl+C to stop."
         )
 

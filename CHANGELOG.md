@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Signal panel: scrolling EEG channels (5 or 10 s window, adjustable scale,
+  flat and saturated channels flagged), fed by `bridge --eeg`, which relays the
+  LSL `openmind-eeg` stream read-only in compact frames of at most 1 s.
 - Live 3D brain panel: band power messages coloured at the sensors on a
   procedural brain surface (Gaussian distance weighting, diverging blue /
   orange scale for `rel_mu` or `rel_beta`, grey for electrodes not OK, smooth

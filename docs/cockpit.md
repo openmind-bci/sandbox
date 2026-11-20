@@ -37,6 +37,16 @@ OPENMIND_BRIDGE_URL=ws://127.0.0.1:8766 godot --path godot
 
 or from **Settings → Bridge address…** while it runs.
 
+## Panels
+
+| Panel | Content |
+|---|---|
+| 3D brain | band power at the sensors ([details](brain-panel.md)) |
+| Signal | scrolling EEG channels, 5 or 10 s, scale ±25 to ±200 µV; a flat (< 0.3 µV over 1 s) or saturated (> 400 µV) channel is named in orange. Needs `bridge --eeg` and a Plug stream. |
+| Command | last decoded command, confidence, decoder state |
+| Progress | score from `openmind/v1/score` |
+| Connection | bridge, broker and decoder heartbeat |
+
 ## Menus and keys
 
 | Menu | Entries |
@@ -95,4 +105,6 @@ godot --headless --path godot --script res://tests/run_tests.gd
 `tests/run_tests.gd` checks the safety filter, the heartbeat, the frames, the
 theme (font, 44 px targets, contrast) and the cockpit (scene switching, commands
 reaching the scene, safety stop). `tests/live_check.gd` checks a running chain
-(bridge + `keys`) without opening a window. Both run without a GPU.
+(bridge + `keys`), `tests/live_signal.gd` the signal panel (bridge `--eeg` + an
+LSL EEG stream) and `tests/live_calibration.gd` the calibration markers, all
+without opening a window or using the GPU.

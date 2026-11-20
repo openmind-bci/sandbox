@@ -17,6 +17,8 @@ signal bandpower_received(bandpower: Dictionary)
 signal marker_received(marker: Dictionary)
 signal event_received(event: Dictionary)
 signal message_rejected(error: String)
+## Chunk of the EEG stream relayed by `bridge --eeg`: srate, labels, samples (rows).
+signal eeg_received(frame: Dictionary)
 
 const DEFAULT_URL := "ws://127.0.0.1:8765"
 ## Seconds without status after which the decoder is considered gone.
@@ -131,6 +133,9 @@ func handle_frame(text: String) -> void:
 		push_warning("OpenMind: ignored a frame that is not a JSON object")
 		return
 	var kind: String = str(frame.get("kind", ""))
+	if kind == "eeg":
+		eeg_received.emit(frame)
+		return
 	var message: Variant = frame.get("message", {})
 	if typeof(message) != TYPE_DICTIONARY:
 		push_warning("OpenMind: ignored a %s frame without a message object" % kind)
