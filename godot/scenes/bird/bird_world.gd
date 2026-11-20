@@ -13,6 +13,9 @@ const CELLS := 80
 const METRES_PER_PIXEL := 0.12
 const BIRD_HEIGHT := 30.0
 const FORWARD_SPEED := 6.0
+## Camera: metres behind the bird and above it.
+const CAMERA_DISTANCE := 2.2
+const CAMERA_RISE := 0.7
 
 var sun: DirectionalLight3D
 var environment: Environment
@@ -51,7 +54,9 @@ func setup() -> void:
 	camera.fov = 60.0
 	camera.far = 900.0
 	add_child(camera)
-	camera.position = Vector3(0, BIRD_HEIGHT + 1.4, 4.2)
+	# Close behind the bird and slightly above it, aimed at it: the bird stays at
+	# the centre of the screen, under the fixation cross and the cues.
+	camera.position = Vector3(0, BIRD_HEIGHT + CAMERA_RISE, CAMERA_DISTANCE)
 	camera.look_at(Vector3(0, BIRD_HEIGHT, 0), Vector3.UP)
 	camera.current = true
 
