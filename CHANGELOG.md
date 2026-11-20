@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `config/robot.yaml` 1.0.0: kinematics and safety parameters shared by the
+  firmware, the Godot twin and the mock robot, validated by `RobotConfig`
+  (unknown keys and other major versions refused). See `docs/robot-config.md`.
+- Mock robot `openmind-sandbox mock-robot`: 2D differential-drive kinematics,
+  simulated distance sensor in an arena with obstacles, the firmware state
+  machine (`STOPPED`, `MOVING`, `PIVOTING`, `SAFETY_STOP`) and its safety rules
+  (stop without status, on low confidence, on invalid messages or lost broker,
+  before obstacles), telemetry and state events on `openmind/v1/events`, live
+  text view. See `docs/objects.md`.
 - Keyboard command simulator `openmind-sandbox keys`: held arrows give
   `left` / `right` / `forward`, space one `action`, no key `rest`, adjustable
   confidence; `running` status at 4 Hz; script mode replaying commands from

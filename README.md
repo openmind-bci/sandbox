@@ -36,7 +36,7 @@ Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHA
 |---|---|
 | Local MQTT broker (Mosquitto, Docker) | available |
 | Keyboard command simulator and fake band power (`keys`) | available |
-| `robot.yaml` and mock robot (`mock-robot`) | planned |
+| `robot.yaml` and mock robot (`mock-robot`) | available |
 | MQTT ↔ WebSocket ↔ LSL gateway (`bridge`) | planned |
 | Godot cockpit: robot twin, bird, wheelchair, live 3D brain | planned |
 | ESP32 robot firmware | planned |
@@ -76,7 +76,15 @@ uv run openmind-sandbox keys
 uv run openmind-sandbox keys --script examples/keys-demo.yaml --bandpower
 ```
 
-Details: [docs/keys.md](docs/keys.md).
+In another terminal, run the mock robot and drive it with the simulator; stop the
+simulator and the robot stops within 2 s:
+
+```bash
+uv run openmind-sandbox mock-robot
+```
+
+Details: [keyboard simulator](docs/keys.md), [objects and mock robot](docs/objects.md),
+[robot configuration](docs/robot-config.md).
 
 ## Data and privacy
 

@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 import pytest
-from openmind_protocol import BandPower, Command, Message, Status, decode_topic, topics
+from openmind_protocol import BandPower, Command, Event, Message, Status, decode_topic, topics
 
 from openmind_sandbox.mqtt import MqttLink
 
@@ -98,3 +98,36 @@ def test_keys_script_publishes_a_live_decoder(tmp_path: Path) -> None:
     assert [c.seq for c in commands] == sorted(c.seq for c in commands)
     assert sum(isinstance(m, Status) for m in collector.messages) >= 3
     assert sum(isinstance(m, BandPower) for m in collector.messages) >= 8
+
+
+def test_mock_robot_moves_on_commands_and_stops_without_status() -> None:
+    collector = Collector()
+    sub = subscribed_link(collector)
+    robot = subprocess.Popen(
+        [sys.executable, "-m", "openmind_sandbox.cli", "mock-robot", "--quiet",
+         "--host", BROKER_HOST, "--port", str(BROKER_PORT)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )  # fmt: skip
+    try:
+        time.sleep(1.5)
+        with MqttLink(BROKER_HOST, BROKER_PORT, name="test-decoder") as decoder:
+            for seq in range(6):
+                decoder.publish(Status(state="running", model="test", user="P00"))
+                decoder.publish(Command(command="forward", confidence=0.95, user="P00", seq=seq))
+                time.sleep(0.25)
+        time.sleep(2.6)  # decoder silent for longer than status_timeout_s
+    finally:
+        robot.terminate()
+        robot.wait(timeout=5)
+        sub.close()
+    states = [
+        (m.data["state"], m.data["reason"])
+        for m in collector.messages
+        if isinstance(m, Event) and m.object == "mock-robot" and m.kind == "state"
+    ]
+    assert ("MOVING", None) in states
+    assert states[-1] == ("SAFETY_STOP", "no_status")
+    telemetry = [m for m in collector.messages if isinstance(m, Event) and m.kind == "telemetry"]
+    assert max(m.data["speed_mps"] for m in telemetry) > 0

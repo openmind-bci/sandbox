@@ -1,0 +1,28 @@
+# OpenMind wheeled robot: kinematics and safety parameters.
+#
+# CONTRACT shared by the ESP32 firmware, the Godot twin and the mock robot.
+# Any change here must be applied to all three together, with a new version
+# (SemVer: major for a renamed or removed key, minor for a new key, patch for
+# a value change) and a CHANGELOG entry. See docs/robot-config.md.
+version: 1.0.0
+
+geometry:
+  wheel_base_m: 0.13        # distance between the two wheel contact points
+  wheel_diameter_m: 0.065
+  length_m: 0.18            # body, for the twin and the simulated sensor position
+  width_m: 0.15
+
+motion:
+  max_speed_mps: 0.25       # hard bound on forward speed
+  acceleration_mps2: 0.10   # forward speeds up while it stays commanded
+  pivot_speed_dps: 90.0     # turning rate of left / right (in place)
+  uturn_deg: 180.0          # turn made by `action`
+
+safety:
+  obstacle_stop_m: 0.20     # no forward motion when an obstacle is closer
+  sensor_range_m: 4.0       # HC-SR04 maximum range; beyond it: no obstacle seen
+  status_timeout_s: 2.0     # stop after this long without a decoder status
+  min_confidence: 0.80      # commands below this confidence stop the robot
+
+telemetry:
+  rate_hz: 5.0              # telemetry events on openmind/v1/events

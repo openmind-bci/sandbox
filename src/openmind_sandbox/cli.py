@@ -9,10 +9,11 @@ from typing import Annotated
 
 import openmind_protocol
 import typer
-from openmind_protocol import Message, Status
+from openmind_protocol import Command, Message, ProtocolError, Status, decode_topic, topics
 
 import openmind_sandbox
 from openmind_sandbox import keyboard
+from openmind_sandbox.config import RobotConfig
 from openmind_sandbox.keyboard_sim import (
     ACTION_KEYS,
     DEFAULT_CHANNELS,
@@ -23,6 +24,7 @@ from openmind_sandbox.keyboard_sim import (
     Script,
     ScriptPlayer,
 )
+from openmind_sandbox.mock_robot import MockRobot, format_line
 from openmind_sandbox.mqtt import DEFAULT_HOST, DEFAULT_PORT, BrokerUnavailableError, MqttLink
 
 app = typer.Typer(
@@ -203,6 +205,92 @@ class _Loop:
             sys.stdout.write(line)
             sys.stdout.flush()
             self._last_line = line
+
+
+@app.command("mock-robot")
+def mock_robot(
+    host: Host = DEFAULT_HOST,
+    port: Port = DEFAULT_PORT,
+    config: Annotated[
+        Path | None,
+        typer.Option(exists=True, dir_okay=False, help="robot.yaml (default: config/robot.yaml)."),
+    ] = None,
+    min_confidence: Annotated[
+        float | None,
+        typer.Option(min=0.0, max=1.0, help="Override safety.min_confidence of robot.yaml."),
+    ] = None,
+    quiet: Annotated[bool, typer.Option(help="Do not print the live state line.")] = False,
+) -> None:
+    """Run the mock robot: 2D kinematics with the safety rules of the firmware.
+
+    Listens to commands and status, publishes telemetry and state changes on
+    openmind/v1/events, and prints its position and state.
+    """
+    try:
+        robot_config = RobotConfig.load(config)
+    except (OSError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from error
+    if min_confidence is not None:
+        safety = robot_config.safety.model_copy(update={"min_confidence": min_confidence})
+        robot_config = robot_config.model_copy(update={"safety": safety})
+    robot = MockRobot(robot_config)
+
+    def on_message(topic: str, payload: bytes) -> None:
+        try:
+            message = decode_topic(topic, payload)
+        except ProtocolError as error:
+            robot.on_fault("invalid_message")
+            typer.echo(f"\nRejected message on {topic}: {error}", err=True)
+            return
+        if isinstance(message, Status):
+            robot.on_status(message)
+        elif isinstance(message, Command):
+            robot.on_command(message)
+
+    def on_connection(connected: bool) -> None:
+        if not connected:
+            robot.on_fault("disconnected")
+
+    link = MqttLink(
+        host,
+        port,
+        name="openmind-mock-robot",
+        on_message=on_message,
+        on_connection_change=on_connection,
+    )
+    link.subscribe([topics.COMMANDS, topics.STATUS])
+    try:
+        link.connect()
+    except BrokerUnavailableError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+
+    typer.echo(
+        f"Mock robot (robot.yaml {robot_config.version}, min confidence "
+        f"{robot_config.safety.min_confidence:.2f}). Waiting for a decoder status. Ctrl+C to stop."
+    )
+    telemetry_period = 1.0 / robot_config.telemetry.rate_hz
+    next_telemetry = 0.0
+    try:
+        while True:
+            robot.step()
+            for state, reason in robot.pop_transitions():
+                link.publish(robot.state_event(state, reason))
+            now = time.monotonic()
+            if now >= next_telemetry:
+                event = robot.telemetry_event()
+                link.publish(event)
+                next_telemetry = now + telemetry_period
+                if not quiet:
+                    sys.stdout.write("\r" + format_line(event.data) + "\x1b[K")
+                    sys.stdout.flush()
+            time.sleep(_TICK)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        link.close()
+        typer.echo("\nMock robot stopped.")
 
 
 if __name__ == "__main__":  # pragma: no cover
