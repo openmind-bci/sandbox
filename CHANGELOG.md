@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Robot twin scene in the cockpit: robot of `robot.yaml` on a waypoint course,
+  same kinematics, state machine and obstacle stop as the mock robot, timer,
+  errors and collisions avoided, events on `openmind/v1/events`
+  (`robot-twin`: telemetry, state, start, waypoint, finish).
+- Courses in `scenarios/courses/` (YAML, validated), `mock-robot --course`,
+  and `openmind-sandbox export-godot` writing JSON copies of `robot.yaml` and
+  the courses for Godot (a test checks they are up to date).
+
+### Fixed
+
+- Mock robot: a robot stopped exactly at the obstacle stop distance is reported
+  as `SAFETY_STOP` (`obstacle`) instead of `MOVING` at zero speed.
 - Godot 4.5 cockpit (`godot/`): `OpenMind` autoload (WebSocket link to the
   bridge with automatic reconnection, signals for every message kind, decoder
   heartbeat, `send_marker` and `send_event`), `ObjectController` with the

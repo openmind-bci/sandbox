@@ -1,0 +1,15 @@
+# Default course of the robot twin and the mock robot (top view, metres).
+# x to the right, y forward; heading in degrees, 0 = +x, counter-clockwise.
+# Waypoints are reached in order, when the robot centre is within `radius`.
+name: twin_default
+title: "Default course: around the posts"
+arena: {width: 3.0, height: 3.0}
+start: {x: 0.5, y: 0.5, heading_deg: 90}
+obstacles:
+  - {x: 1.5, y: 1.5, radius: 0.20}
+  - {x: 2.3, y: 0.9, radius: 0.12}
+waypoints:
+  - {x: 0.5, y: 2.4, radius: 0.18}
+  - {x: 2.4, y: 2.4, radius: 0.18}
+  - {x: 2.4, y: 1.5, radius: 0.18}
+  - {x: 1.5, y: 0.5, radius: 0.18}

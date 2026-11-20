@@ -1,0 +1,25 @@
+{
+  "_generated": "by `openmind-sandbox export-godot`; do not edit",
+  "version": "1.0.0",
+  "geometry": {
+    "wheel_base_m": 0.13,
+    "wheel_diameter_m": 0.065,
+    "length_m": 0.18,
+    "width_m": 0.15
+  },
+  "motion": {
+    "max_speed_mps": 0.25,
+    "acceleration_mps2": 0.1,
+    "pivot_speed_dps": 90.0,
+    "uturn_deg": 180.0
+  },
+  "safety": {
+    "obstacle_stop_m": 0.2,
+    "sensor_range_m": 4.0,
+    "status_timeout_s": 2.0,
+    "min_confidence": 0.8
+  },
+  "telemetry": {
+    "rate_hz": 5.0
+  }
+}

@@ -45,6 +45,8 @@ from openmind_sandbox.config import RobotConfig
 
 #: ``object`` field of the events published by the mock robot.
 OBJECT_NAME: Final = "mock-robot"
+#: Metres within which the stop distance counts as reached (rounding).
+STOP_TOLERANCE: Final = 1e-6
 
 
 class RobotState(StrEnum):
@@ -214,7 +216,9 @@ class MockRobot:
     def _update(self, dt: float) -> None:
         motion = self.config.motion
         self.obstacle = self._measure()
-        blocked = self.obstacle is not None and self.obstacle < self.config.safety.obstacle_stop_m
+        # At the stop distance counts as blocked (the motion is clamped to land on it).
+        limit = self.config.safety.obstacle_stop_m + STOP_TOLERANCE
+        blocked = self.obstacle is not None and self.obstacle <= limit
 
         safety_reason = self._safety_reason()
         if safety_reason is not None:

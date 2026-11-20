@@ -39,7 +39,8 @@ Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHA
 | `robot.yaml` and mock robot (`mock-robot`) | available |
 | MQTT ↔ WebSocket ↔ LSL gateway (`bridge`) | available |
 | Godot cockpit: menus, panels, scene switching (`godot/`) | available (placeholder scenes) |
-| Scenes: robot twin, bird, wheelchair, boat; live 3D brain | planned |
+| Robot twin scene: waypoint course, timer, event log | available |
+| Scenes: bird, wheelchair, boat; live 3D brain | planned |
 | ESP32 robot firmware | planned |
 | Adapter template for your own object | planned |
 

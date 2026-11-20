@@ -14,6 +14,7 @@ from openmind_protocol import Command, Message, ProtocolError, Status, decode_to
 import openmind_sandbox
 from openmind_sandbox import keyboard
 from openmind_sandbox.config import RobotConfig
+from openmind_sandbox.course import Course, export_godot_data
 from openmind_sandbox.keyboard_sim import (
     ACTION_KEYS,
     DEFAULT_CHANNELS,
@@ -219,6 +220,12 @@ def mock_robot(
         float | None,
         typer.Option(min=0.0, max=1.0, help="Override safety.min_confidence of robot.yaml."),
     ] = None,
+    course: Annotated[
+        Path | None,
+        typer.Option(
+            exists=True, dir_okay=False, help="Course YAML (arena, obstacles, start pose)."
+        ),
+    ] = None,
     quiet: Annotated[bool, typer.Option(help="Do not print the live state line.")] = False,
 ) -> None:
     """Run the mock robot: 2D kinematics with the safety rules of the firmware.
@@ -234,7 +241,17 @@ def mock_robot(
     if min_confidence is not None:
         safety = robot_config.safety.model_copy(update={"min_confidence": min_confidence})
         robot_config = robot_config.model_copy(update={"safety": safety})
-    robot = MockRobot(robot_config)
+    if course is not None:
+        try:
+            loaded_course = Course.load(course)
+        except ValueError as error:
+            typer.echo(str(error), err=True)
+            raise typer.Exit(2) from error
+        robot = MockRobot(
+            robot_config, world=loaded_course.world(), pose=loaded_course.start_pose()
+        )
+    else:
+        robot = MockRobot(robot_config)
 
     def on_message(topic: str, payload: bytes) -> None:
         try:
@@ -291,6 +308,21 @@ def mock_robot(
     finally:
         link.close()
         typer.echo("\nMock robot stopped.")
+
+
+@app.command("export-godot")
+def export_godot(
+    root: Annotated[
+        Path, typer.Option(file_okay=False, help="Root of the sandbox repository.")
+    ] = Path(),
+) -> None:
+    """Write robot.yaml and the courses as JSON for Godot (godot/data/)."""
+    try:
+        for path in export_godot_data(root):
+            typer.echo(f"wrote {path}")
+    except (OSError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from error
 
 
 @app.command()

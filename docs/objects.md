@@ -22,16 +22,52 @@ at once on any other state), stop on a command below their confidence threshold,
 ignore stale `seq`, stop on an invalid message or a lost broker. The Python
 helper is `openmind_protocol.Watchdog`.
 
+## Robot twin (Godot)
+
+The first scene of the [cockpit](cockpit.md): the robot of
+[`robot.yaml`](robot-config.md), seen from above, on a waypoint course. Its
+kinematics, state machine and obstacle stop are the same as the mock robot below
+(`godot/scenes/robot_twin/twin_robot.gd` mirrors `mock_robot.py`), with a
+confidence threshold of 0.8 like the real robot.
+
+The heads-up display shows the state, the speed, the distance ahead, the next
+waypoint, the time, the **errors** (commands refused below the confidence
+threshold during the run) and the **collisions avoided** (times the obstacle stop
+had to act). `R` restarts the course.
+
+Courses are YAML files in `scenarios/courses/` (arena, start pose, round
+obstacles, waypoints visited in order). Godot reads JSON copies in `godot/data/`:
+after changing a course or `robot.yaml`, run
+
+```bash
+uv run openmind-sandbox export-godot
+```
+
+(a test fails when the copies are stale). The mock robot can run on the same
+course, to compare both: `openmind-sandbox mock-robot --course scenarios/courses/twin_default.yaml`.
+
+Events, with `"object": "robot-twin"`:
+
+| `kind` | When | `data` |
+|---|---|---|
+| `telemetry` | `telemetry.rate_hz` | same fields as the mock robot |
+| `state` | every change of state or reason | `state`, `reason` |
+| `start` | first movement | `course` |
+| `waypoint` | waypoint reached | `course`, `index` (from 0), `time_s` |
+| `finish` | last waypoint | `course`, `time_s`, `errors`, `collisions_avoided` |
+
 ## Mock robot
 
 ```bash
 openmind-sandbox mock-robot                     # reads config/robot.yaml
 openmind-sandbox mock-robot --min-confidence 0.6
+openmind-sandbox mock-robot --course scenarios/courses/twin_default.yaml
 ```
 
 A text-only robot with the kinematics of [`robot.yaml`](robot-config.md) and the
 state machine of the firmware, in a 3 m × 3 m arena with one round obstacle
-straight ahead of the start position (`x` 1.5 m, `y` 0.5 m, facing +y). Drive it
+straight ahead of the start position (`x` 1.5 m, `y` 0.5 m, facing +y), or on a
+course with `--course`. Drive it
 with [`openmind-sandbox keys`](keys.md).
 
 A command stays in force until the next accepted one. The U-turn of `action` is a

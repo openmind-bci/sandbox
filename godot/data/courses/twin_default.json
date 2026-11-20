@@ -1,0 +1,48 @@
+{
+  "_generated": "by `openmind-sandbox export-godot`; do not edit",
+  "name": "twin_default",
+  "title": "Default course: around the posts",
+  "arena": {
+    "width": 3.0,
+    "height": 3.0
+  },
+  "start": {
+    "x": 0.5,
+    "y": 0.5,
+    "heading_deg": 90.0
+  },
+  "obstacles": [
+    {
+      "x": 1.5,
+      "y": 1.5,
+      "radius": 0.2
+    },
+    {
+      "x": 2.3,
+      "y": 0.9,
+      "radius": 0.12
+    }
+  ],
+  "waypoints": [
+    {
+      "x": 0.5,
+      "y": 2.4,
+      "radius": 0.18
+    },
+    {
+      "x": 2.4,
+      "y": 2.4,
+      "radius": 0.18
+    },
+    {
+      "x": 2.4,
+      "y": 1.5,
+      "radius": 0.18
+    },
+    {
+      "x": 1.5,
+      "y": 0.5,
+      "radius": 0.18
+    }
+  ]
+}

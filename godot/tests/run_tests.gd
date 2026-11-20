@@ -30,6 +30,8 @@ func _run() -> void:
 	test_marker_and_event_frames()
 	test_theme()
 	test_bridge_url()
+	test_twin_robot()
+	test_twin_course()
 	await test_cockpit()
 
 	print("%d checks, %d failed" % [_checks, _failures])
@@ -135,6 +137,98 @@ func test_bridge_url() -> void:
 	check(OpenMindScript.bridge_url_from(PackedStringArray([]), "ws://e:2") == "ws://e:2",
 			"environment used without argument")
 	check(OpenMindScript.bridge_url_from(PackedStringArray([]), "") == "", "default kept")
+
+
+func _twin(obstacles: Array[Vector3] = []) -> TwinRobot:
+	var robot := TwinRobot.new(TwinRobot.load_config("res://data/robot.json"))
+	robot.arena = Vector2(10, 10)
+	robot.obstacles = obstacles
+	robot.place(Vector2(5, 5), 0.0)
+	robot.resume()
+	return robot
+
+
+func _drive(robot: TwinRobot, seconds: float) -> void:
+	for i in roundi(seconds / 0.02):
+		robot.step(0.02)
+
+
+func test_twin_robot() -> void:
+	var config := TwinRobot.load_config("res://data/robot.json")
+	check(not config.is_empty(), "robot.json is readable")
+	check(is_equal_approx(float(config["safety"]["obstacle_stop_m"]), 0.2), "stop at 20 cm")
+
+	var robot := TwinRobot.new(config)
+	robot.place(Vector2(5, 5), 0.0)
+	robot.apply("forward")
+	_drive(robot, 1.0)
+	check(robot.state == TwinRobot.SAFETY_STOP and robot.position.x == 5.0,
+			"no motion before the decoder is alive")
+
+	robot = _twin()
+	robot.apply("forward")
+	_drive(robot, 1.0)
+	check(absf(robot.speed - robot.acceleration) < 0.01, "forward speeds up")
+	_drive(robot, 10.0)
+	check(robot.speed == robot.max_speed or robot.state == TwinRobot.SAFETY_STOP,
+			"speed bounded")
+
+	robot = _twin([Vector3(6.0, 5.0, 0.1)])
+	robot.apply("forward")
+	_drive(robot, 20.0)
+	check(robot.state == TwinRobot.SAFETY_STOP and robot.reason == "obstacle", "obstacle stop")
+	check(absf(robot.obstacle - robot.obstacle_stop) < 0.01, "stops at the stop distance")
+	check(robot.collisions_avoided == 1, "collision avoided counted once")
+	robot.apply("left")
+	_drive(robot, 1.0)
+	check(robot.state == TwinRobot.PIVOTING, "can pivot away from the obstacle")
+
+	robot = _twin()
+	robot.apply("left")
+	_drive(robot, 1.0)
+	check(absf(rad_to_deg(robot.heading) - 90.0) < 3.0, "pivot at 90°/s")
+	check(robot.position == Vector2(5, 5), "pivot in place")
+
+	robot = _twin()
+	robot.apply("action")
+	_drive(robot, 0.1)
+	robot.apply("rest")
+	_drive(robot, 3.0)
+	check(robot.state == TwinRobot.STOPPED and absf(absf(robot.heading) - PI) < 1e-4,
+			"U-turn completes despite rest")
+
+	robot = _twin()
+	robot.apply("forward")
+	_drive(robot, 0.5)
+	robot.refuse_low_confidence()
+	_drive(robot, 0.1)
+	check(robot.state == TwinRobot.STOPPED and robot.reason == "low_confidence",
+			"low confidence stops")
+	robot.apply("forward")
+	_drive(robot, 0.2)
+	robot.halt()
+	_drive(robot, 0.2)
+	check(robot.state == TwinRobot.SAFETY_STOP and robot.speed == 0.0, "decoder halt stops")
+	robot.apply("forward")
+	_drive(robot, 0.2)
+	check(robot.speed == 0.0, "no command applied while halted")
+	var telemetry := robot.telemetry()
+	check(telemetry.has("x_m") and telemetry["state"] == "SAFETY_STOP", "telemetry fields")
+
+
+func test_twin_course() -> void:
+	var course := TwinCourse.from_file("res://data/courses/twin_default.json")
+	check(course != null and course.waypoints.size() >= 2, "default course loads")
+	check(course.update(Vector2(9, 9), false, 1.0).is_empty(), "timer waits for motion")
+	var events := course.update(course.start_position, true, 0.5)
+	check(events.size() == 1 and events[0][0] == "start", "course starts with motion")
+	var kinds: Array = []
+	for w in course.waypoints:
+		for e in course.update(Vector2(w.x, w.y), true, 1.0):
+			kinds.append(e[0])
+	check(kinds.count("waypoint") == course.waypoints.size(), "each waypoint reached once")
+	check(kinds.back() == "finish" and course.finished, "course finishes")
+	check(is_equal_approx(course.elapsed, 0.5 + course.waypoints.size()), "elapsed time")
 
 
 func test_theme() -> void:
