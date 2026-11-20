@@ -329,6 +329,22 @@ def export_godot(
         raise typer.Exit(2) from error
 
 
+@app.command("export-firmware")
+def export_firmware(
+    root: Annotated[
+        Path, typer.Option(file_okay=False, help="Root of the sandbox repository.")
+    ] = Path(),
+) -> None:
+    """Write robot.yaml as a C++ header for the ESP32 firmware."""
+    from openmind_sandbox.firmware import export_firmware_header
+
+    try:
+        typer.echo(f"wrote {export_firmware_header(root)}")
+    except (OSError, ValueError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from error
+
+
 @app.command()
 def bridge(
     host: Host = DEFAULT_HOST,

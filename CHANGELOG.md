@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- ESP32 robot firmware (`firmware/esp32-robot/`, PlatformIO): portable core
+  with the protocol parsing, state machine and safety rules, unit-tested on the
+  host (`pio test -e native`), and Arduino glue for Wi-Fi, MQTT, TB6612FNG and
+  HC-SR04. Parameters in `include/robot_config.h`, generated from
+  `robot.yaml` by `openmind-sandbox export-firmware`. See `docs/firmware.md`.
 - `tools/check_topomap.py`: MNE topographic map of the band power messages,
   live or saved once to an image, with the colours of the 3D panel and the
   lowest electrode printed, to cross-check the 3D brain.

@@ -79,8 +79,11 @@ jobs:
           fi
       - if: steps.project.outputs.present == 'true'
         uses: astral-sh/setup-uv@v7
+      - name: Use the example secrets (build only, never flashed)
+        if: steps.project.outputs.present == 'true'
+        run: cp firmware/esp32-robot/include/secrets.h.example firmware/esp32-robot/include/secrets.h
       - if: steps.project.outputs.present == 'true'
-        run: uvx --from platformio pio run -d firmware/esp32-robot
+        run: uvx --from platformio pio run -d firmware/esp32-robot -e esp32dev
       - if: steps.project.outputs.present == 'true'
         run: uvx --from platformio pio test -d firmware/esp32-robot -e native
 

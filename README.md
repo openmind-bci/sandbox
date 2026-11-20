@@ -46,7 +46,7 @@ Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHA
 | Signal panel (EEG relayed read-only by `bridge --eeg`) | available |
 | 2D topographic check of band power (`tools/check_topomap.py`) | available |
 | Boat scene | planned |
-| ESP32 robot firmware | planned |
+| ESP32 robot firmware (built, not flashed) | available |
 | Adapter template for your own object | planned |
 
 ## Installation
