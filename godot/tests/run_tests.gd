@@ -32,6 +32,7 @@ func _run() -> void:
 	test_bridge_url()
 	test_twin_robot()
 	test_twin_course()
+	test_twin_full_course()
 	await test_cockpit()
 
 	print("%d checks, %d failed" % [_checks, _failures])
@@ -229,6 +230,27 @@ func test_twin_course() -> void:
 	check(kinds.count("waypoint") == course.waypoints.size(), "each waypoint reached once")
 	check(kinds.back() == "finish" and course.finished, "course finishes")
 	check(is_equal_approx(course.elapsed, 0.5 + course.waypoints.size()), "elapsed time")
+
+
+## Same plan as examples/keys-twin-course.yaml (and tests/test_course.py).
+const COURSE_PLAN := [["rest", 1.0], ["forward", 8.5], ["right", 1.0], ["forward", 9.0],
+	["right", 1.0], ["forward", 8.3], ["right", 1.0], ["forward", 5.5], ["rest", 2.0]]
+
+
+func test_twin_full_course() -> void:
+	var course := TwinCourse.from_file("res://data/courses/twin_default.json")
+	var robot := TwinRobot.new(TwinRobot.load_config("res://data/robot.json"))
+	robot.arena = course.arena
+	robot.obstacles = course.obstacles
+	robot.place(course.start_position, course.start_heading)
+	robot.resume()
+	for step in COURSE_PLAN:
+		robot.apply(step[0])
+		for i in roundi(step[1] / 0.02):
+			robot.step(0.02)
+			course.update(robot.position, robot.state == TwinRobot.MOVING, 0.02)
+	check(course.finished, "the keyboard plan completes the default course in the twin")
+	check(robot.collisions_avoided == 0, "the plan avoids every obstacle")
 
 
 func test_theme() -> void:

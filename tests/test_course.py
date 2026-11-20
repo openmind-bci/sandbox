@@ -45,3 +45,33 @@ def test_points_outside_the_arena_are_rejected(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="outside the arena"):
         Course.load(path)
+
+
+def test_example_keys_script_completes_the_default_course_with_the_mock_robot() -> None:
+    from openmind_protocol import Command, Status
+
+    from openmind_sandbox.keyboard_sim import Script
+
+    course = Course.load(ROOT / "scenarios" / "courses" / "twin_default.yaml")
+    script = Script.load(ROOT / "examples" / "keys-twin-course.yaml")
+    now = [0.0]
+    robot = MockRobot(
+        RobotConfig.load(ROOT / "config" / "robot.yaml"),
+        world=course.world(),
+        pose=course.start_pose(),
+        clock=lambda: now[0],
+    )
+    seq, reached, dt = 0, 0, 0.02
+    for step in script.steps:
+        for i in range(round(step.duration / dt)):
+            if i % 12 == 0:  # status and repeated command at about 4 Hz, like `keys`
+                robot.on_status(Status(state="running", model="test", user="P00"))
+                robot.on_command(Command(command=step.command, confidence=0.9, user="P00", seq=seq))
+                seq += 1
+            now[0] += dt
+            robot.step()
+            if reached < len(course.waypoints):
+                target = course.waypoints[reached]
+                if math.hypot(robot.pose.x - target.x, robot.pose.y - target.y) <= target.radius:
+                    reached += 1
+    assert reached == len(course.waypoints)

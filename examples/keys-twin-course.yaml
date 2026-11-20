@@ -1,0 +1,16 @@
+# Complete run of the default twin course (scenarios/courses/twin_default.yaml):
+#   openmind-sandbox keys --script examples/keys-twin-course.yaml
+# with the cockpit on the robot twin, or with
+#   openmind-sandbox mock-robot --course scenarios/courses/twin_default.yaml
+# The same plan is replayed by tests/test_course.py and godot/tests/run_tests.gd.
+user: P00
+steps:
+  - {command: rest, duration: 1}
+  - {command: forward, duration: 8.5}   # up to waypoint 1
+  - {command: right, duration: 1}       # 90° at 90°/s
+  - {command: forward, duration: 9}     # waypoint 2
+  - {command: right, duration: 1}
+  - {command: forward, duration: 8.3}   # waypoint 3, then along the right wall
+  - {command: right, duration: 1}
+  - {command: forward, duration: 5.5}   # waypoint 4
+  - {command: rest, duration: 2}

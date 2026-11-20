@@ -43,7 +43,9 @@ after changing a course or `robot.yaml`, run
 uv run openmind-sandbox export-godot
 ```
 
-(a test fails when the copies are stale). The mock robot can run on the same
+(a test fails when the copies are stale). `examples/keys-twin-course.yaml` drives
+a complete run of the default course with `openmind-sandbox keys --script`; the
+tests replay it on both the twin and the mock robot. The mock robot can run on the same
 course, to compare both: `openmind-sandbox mock-robot --course scenarios/courses/twin_default.yaml`.
 
 Events, with `"object": "robot-twin"`:
