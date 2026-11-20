@@ -7,7 +7,7 @@ file carries a SemVer ``version``; this package reads major version 1.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Final
+from typing import Annotated, Final, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
@@ -16,6 +16,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 SUPPORTED_MAJOR: Final = 1
 
 Positive = Annotated[float, Field(gt=0)]
+Unit = Annotated[float, Field(ge=0, le=1)]
+#: Commands that have a confidence threshold (``rest`` always applies).
+ThresholdedCommand = Literal["left", "right", "forward", "action"]
 
 _STRICT = ConfigDict(extra="forbid", frozen=True)
 
@@ -51,6 +54,16 @@ class Safety(BaseModel):
     sensor_range_m: Positive
     status_timeout_s: Annotated[float, Field(gt=0, le=2.0)]
     min_confidence: Annotated[float, Field(ge=0, le=1)]
+    min_confidence_per_command: dict[ThresholdedCommand, Unit] = {}
+
+    def threshold(self, command: str) -> float:
+        """Minimum confidence of ``command``; ``rest`` has none (stopping is always safe)."""
+        if command == "rest":
+            return 0.0
+        for name, value in self.min_confidence_per_command.items():
+            if name == command:
+                return value
+        return self.min_confidence
 
 
 class Telemetry(BaseModel):
@@ -103,6 +116,37 @@ class RobotConfig(BaseModel):
                 for e in error.errors()
             )
             raise ValueError(f"{path}: invalid robot configuration: {problems}") from error
+
+
+def with_thresholds(
+    config: RobotConfig, everyone: float | None, overrides: list[str]
+) -> RobotConfig:
+    """``config`` with confidence thresholds changed.
+
+    Args:
+        everyone: New threshold of every command (clears per-command values).
+        overrides: ``"command=value"`` items applied afterwards.
+
+    Raises:
+        ValueError: On a malformed item, an unknown command or a value outside 0-1.
+    """
+    safety = config.safety.model_dump()
+    if everyone is not None:
+        safety["min_confidence"] = everyone
+        safety["min_confidence_per_command"] = {}
+    for item in overrides:
+        name, sep, value = item.partition("=")
+        if not sep:
+            raise ValueError(f"{item!r}: expected COMMAND=VALUE")
+        try:
+            safety["min_confidence_per_command"][name.strip()] = float(value)
+        except ValueError as error:
+            raise ValueError(f"{item!r}: {value!r} is not a number") from error
+    try:
+        return config.model_copy(update={"safety": Safety.model_validate(safety)})
+    except ValidationError as error:
+        problems = "; ".join(f"{'.'.join(map(str, e['loc']))}: {e['msg']}" for e in error.errors())
+        raise ValueError(problems) from error
 
 
 def default_robot_config() -> Path:

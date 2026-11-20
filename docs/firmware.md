@@ -29,15 +29,19 @@ mock robot and the Godot twin:
 
 - stopped at start until a `running` status arrives; stop 2 s after the last
   status, and at once when the status is not `running` (`decoder_<state>`);
-- stop on a command below `min_confidence` (`low_confidence`); stale `seq`
-  ignored, reset after a decoder silence;
+- a command below its threshold (`kMinConfidenceLeft`... `kMinConfidenceAction`)
+  is ignored; `rest` always stops; stale `seq` ignored, reset after a decoder
+  silence;
+- during the U-turn of `action`: `rest`, `left` and `action` are ignored, `right`
+  cancels it, `forward` interrupts it;
 - stop on an invalid message or a lost broker (`invalid_message`,
   `disconnected`) until the next valid `running` status;
 - no forward motion at or below `obstacle_stop_m` (`obstacle`); pivoting away
   stays possible; forward speed bounded by `max_speed_mps`.
 
 The motor driver is put in standby (STBY low) whenever both wheels are stopped.
-The U-turn of `action` is timed (no wheel encoder). Telemetry is published on
+The U-turn is timed (no wheel encoder). Thresholds are compiled from
+`robot.yaml` and cannot be changed over the network. Telemetry is published on
 `openmind/v1/events` with `"object": "robot"` at `telemetry.rate_hz`.
 
 Pins (to be confirmed with the wiring diagram of SBX-090): STBY 27; left motor

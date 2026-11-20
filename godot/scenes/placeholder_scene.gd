@@ -35,10 +35,9 @@ func _on_command(command: Dictionary) -> void:
 
 func _on_refused(command: Dictionary, reason: String) -> void:
 	if reason == "confidence":
-		last_command = "rest"
-		_command_label.text = "■ rest"
-		_show_state("Stopped: confidence %.2f below %.2f" % [
-			float(command.get("confidence", 0.0)), _controller.min_confidence])
+		var name := str(command.get("command", "?"))
+		_show_state("Ignored %s: confidence %.2f below %.2f" % [
+			name, float(command.get("confidence", 0.0)), _controller.threshold(name)])
 
 
 func _on_stop(_reason: String) -> void:

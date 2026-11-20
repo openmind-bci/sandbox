@@ -1,8 +1,8 @@
 extends Control
 ## Wheelchair scene: drive through an apartment, open doors with `action`.
 ##
-## Commands come through the ObjectController (decoder alive, confidence ≥ 0.8,
-## newer seq). `rest` stops at once; `action` opens the closed door in front and
+## Commands come through the ObjectController (decoder alive, confidence ≥ 0.8
+## per command, newer seq; below it a command is ignored). `rest` stops at once; `action` opens the closed door in front and
 ## is ignored elsewhere. The run is timed and logged on openmind/v1/events with
 ## "object": "wheelchair". R restarts.
 
@@ -31,7 +31,7 @@ func _ready() -> void:
 	_openmind = get_node_or_null("/root/OpenMind")
 	_data = JSON.parse_string(FileAccess.get_file_as_string(apartment_path))
 	chair = ChairModel.from_dict(_data)
-	_controller.min_confidence = chair.min_confidence
+	_controller.configure(chair.min_confidence, {})
 	course = TwinCourse.new()
 	course.name = str(_data["name"])
 	var names := PackedStringArray()
@@ -100,11 +100,9 @@ func _on_command(command: Dictionary) -> void:
 
 
 func _on_refused(_command: Dictionary, reason: String) -> void:
-	if reason == "confidence":
-		last_command = "rest"
-		chair.refuse_low_confidence()
-		if course.started and not course.finished:
-			course.errors += 1
+	# Below its threshold a command is ignored; the run counts it as an error.
+	if reason == "confidence" and course.started and not course.finished:
+		course.errors += 1
 
 
 func _stop() -> void:

@@ -72,6 +72,7 @@ func switch_scene(scene_id: String) -> bool:
 		current_scene.theme = _theme  # themes do not cross the SubViewport
 	viewport.add_child(current_scene)
 	current_scene_id = scene_id
+	command_panel.bind_controller(current_scene.get_node_or_null("ObjectController"))
 	get_window().title = "OpenMind Sandbox — %s" % SCENES[scene_id][0]
 	scene_changed.emit(scene_id)
 	return true

@@ -12,13 +12,15 @@ rectangular arena with round obstacles. Commands map to motion as follows:
 ========== ==================================================================
 
 A command stays in force until the next accepted one. A U-turn is a short
-maneuver: the ``rest`` that follows ``action`` does not cut it, but a movement
-command or any safety stop does. Safety, applied before any
+maneuver: ``rest``, ``left`` and ``action`` do not cut it, ``right`` (the opposite
+rotation) cancels it and stops, ``forward`` interrupts it, and so does any safety
+stop. Safety, applied before any
 motion (see ``docs/protocol.md`` of OpenMind Core, section 4):
 
 1. no ``running`` status for ``status_timeout_s`` (or none yet): stop
    (``SAFETY_STOP``, reason ``no_status``); a non-running status stops at once;
-2. command below ``min_confidence``: stop (``STOPPED``, ``low_confidence``);
+2. command below its confidence threshold: ignored (``rest`` has no threshold:
+   it always stops);
 3. stale ``seq``: ignored;
 4. invalid message or broker disconnection: stop (``SAFETY_STOP``) until the next
    valid ``running`` status;
@@ -144,7 +146,7 @@ class MockRobot:
     obstacle: float | None = field(init=False, default=None)
     _watchdog: Watchdog = field(init=False, repr=False)
     _fault: str | None = field(init=False, default=None, repr=False)
-    _command_reason: str | None = field(init=False, default=None, repr=False)
+    ignored_low_confidence: int = field(init=False, default=0)
     _uturn_left: float = field(init=False, default=0.0, repr=False)
     _was_alive: bool = field(init=False, default=False, repr=False)
     _last_state: str | None = field(init=False, default=None, repr=False)
@@ -157,7 +159,7 @@ class MockRobot:
     def __post_init__(self) -> None:
         safety = self.config.safety
         self._watchdog = Watchdog(
-            min_confidence=safety.min_confidence,
+            min_confidence=0.0,  # thresholds are per command, see on_command
             timeout=safety.status_timeout_s,
             clock=self.clock,
         )
@@ -179,23 +181,30 @@ class MockRobot:
                 self._stop_command()
 
     def on_command(self, command: Command) -> None:
-        """Apply a decoded command if the safety rules allow it."""
+        """Apply a decoded command if the safety rules allow it.
+
+        A command below its confidence threshold is ignored; ``rest`` has no
+        threshold. During a U-turn, ``rest``, ``left`` and ``action`` are ignored,
+        ``right`` (the opposite rotation) cancels it and ``forward`` interrupts it.
+        """
         with self._lock:
             if not self._watchdog.alive or self._fault is not None:
                 return
-            if command.confidence < self.config.safety.min_confidence:
-                self._stop_command()
-                self._command_reason = "low_confidence"
+            if command.confidence < self.config.safety.threshold(command.command):
+                self.ignored_low_confidence += 1
                 return
             if not self._watchdog.accept(command):
                 return  # stale or duplicate seq
-            if command.command == "action":
-                if self.command != "action":
-                    self._uturn_left = math.radians(self.config.motion.uturn_deg)
-            elif command.command == "rest" and self.command == "action":
-                return  # a U-turn completes; only a movement command or safety ends it
-            self.command = command.command
-            self._command_reason = None
+            name = command.command
+            if self.command == "action":
+                if name in ("rest", "left", "action"):
+                    return
+                if name == "right":
+                    self._stop_command()  # the opposite rotation cancels the U-turn
+                    return
+            if name == "action":
+                self._uturn_left = math.radians(self.config.motion.uturn_deg)
+            self.command = name
 
     def on_fault(self, reason: str) -> None:
         """Fail safe: stop on an invalid message or a lost broker connection."""
@@ -255,7 +264,7 @@ class MockRobot:
         else:
             self.speed = 0.0
             self.turn_rate = 0.0
-            self._set(RobotState.STOPPED, self._command_reason)
+            self._set(RobotState.STOPPED, None)
 
         self.pose.heading = _wrap(self.pose.heading + self.turn_rate * dt)
         distance = self.speed * dt

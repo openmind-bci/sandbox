@@ -33,8 +33,21 @@ bool validVersion(JsonDocument& doc) {
 }  // namespace
 
 RobotParams defaultParams() {
-  return RobotParams{kWheelBaseM,   kMaxSpeedMps,   kAccelerationMps2, kPivotSpeedDps,
-                     kUturnDeg,     kObstacleStopM, kStatusTimeoutS,   kMinConfidence};
+  return RobotParams{kWheelBaseM,       kMaxSpeedMps,          kAccelerationMps2,
+                     kPivotSpeedDps,    kUturnDeg,             kObstacleStopM,
+                     kStatusTimeoutS,   kMinConfidenceLeft,    kMinConfidenceRight,
+                     kMinConfidenceForward, kMinConfidenceAction};
+}
+
+float RobotParams::threshold(Command command) const {
+  switch (command) {
+    case Command::Left: return minConfidenceLeft;
+    case Command::Right: return minConfidenceRight;
+    case Command::Forward: return minConfidenceForward;
+    case Command::Action: return minConfidenceAction;
+    case Command::Rest:
+    default: return 0.0f;
+  }
 }
 
 const char* stateName(State state) {
@@ -105,21 +118,26 @@ bool RobotCore::handleCommand(const char* payload, size_t length, uint32_t nowMs
     return false;
   }
   if (!decoderAlive(nowMs) || fault_ != nullptr) return true;  // ignored
-  if (confidence < p_.minConfidence) {
-    stopCommand();
-    commandReason_ = "low_confidence";
+  if (confidence < p_.threshold(command)) {
+    ++ignoredLowConfidence_;  // ignored: the robot keeps doing what it does
     return true;
   }
   if (haveSeq_ && seq <= lastSeq_) return true;  // stale or duplicate
   haveSeq_ = true;
   lastSeq_ = seq;
-  if (command == Command::Action) {
-    if (command_ != Command::Action) uturnLeftDeg_ = p_.uturnDeg;
-  } else if (command == Command::Rest && command_ == Command::Action) {
-    return true;  // a U-turn completes; only a movement command or safety ends it
+  if (command_ == Command::Action) {
+    // U-turn in progress: rest, left and action do not cut it; right (the
+    // opposite rotation) cancels it; forward interrupts it.
+    if (command == Command::Rest || command == Command::Left || command == Command::Action) {
+      return true;
+    }
+    if (command == Command::Right) {
+      stopCommand();
+      return true;
+    }
   }
+  if (command == Command::Action) uturnLeftDeg_ = p_.uturnDeg;
   command_ = command;
-  commandReason_ = "";
   return true;
 }
 
@@ -179,7 +197,7 @@ WheelSpeeds RobotCore::step(uint32_t nowMs, float obstacleM) {
     case Command::Rest:
     default:
       stopCommand();
-      setState(State::Stopped, commandReason_);
+      setState(State::Stopped, "");
       return WheelSpeeds{0.0f, 0.0f};
   }
 }

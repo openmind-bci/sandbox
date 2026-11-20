@@ -91,15 +91,33 @@ void test_non_running_status_stops_at_once() {
   TEST_ASSERT_EQUAL_STRING("decoder_calibrating", robot->reason());
 }
 
-void test_low_confidence_stops() {
+void test_low_confidence_is_ignored() {
   status();
   command("forward");
   run(1.0f);
-  command("forward", 0.5f);
+  command("left", 0.5f);
+  auto wheels = run(0.02f);
+  TEST_ASSERT_EQUAL(State::Moving, robot->state());
+  TEST_ASSERT_TRUE(wheels.left > 0.0f);
+  TEST_ASSERT_EQUAL_UINT32(1, robot->ignoredLowConfidence());
+}
+
+void test_rest_stops_whatever_its_confidence() {
+  status();
+  command("forward");
+  run(1.0f);
+  command("rest", 0.05f);
   auto wheels = run(0.02f);
   TEST_ASSERT_EQUAL(State::Stopped, robot->state());
-  TEST_ASSERT_EQUAL_STRING("low_confidence", robot->reason());
   TEST_ASSERT_EQUAL_FLOAT(0.0f, wheels.left);
+}
+
+void test_action_has_its_own_threshold() {
+  TEST_ASSERT_TRUE(openmind::kMinConfidenceAction > openmind::kMinConfidenceForward);
+  status();
+  command("action", 0.82f);
+  run(0.5f);
+  TEST_ASSERT_EQUAL(State::Stopped, robot->state());
 }
 
 void test_stale_seq_ignored_and_reset_after_silence() {
@@ -141,15 +159,37 @@ void test_speed_is_bounded() {
   TEST_ASSERT_EQUAL_FLOAT(openmind::kMaxSpeedMps, wheels.left);
 }
 
-void test_u_turn_completes_despite_rest() {
+void test_u_turn_completes_despite_rest_and_left() {
   status();
   command("action");
   run(0.1f);
   command("rest");
-  run(1.0f);
+  run(0.5f);
+  command("left");
+  command("action");
+  run(0.5f);
   TEST_ASSERT_EQUAL(State::Pivoting, robot->state());
   run(1.5f);
   TEST_ASSERT_EQUAL(State::Stopped, robot->state());
+}
+
+void test_opposite_rotation_cancels_u_turn() {
+  status();
+  command("action");
+  run(0.5f);
+  command("right");
+  auto wheels = run(0.1f);
+  TEST_ASSERT_EQUAL(State::Stopped, robot->state());
+  TEST_ASSERT_EQUAL_FLOAT(0.0f, wheels.right);
+}
+
+void test_forward_interrupts_u_turn() {
+  status();
+  command("action");
+  run(0.5f);
+  command("forward");
+  run(0.1f);
+  TEST_ASSERT_EQUAL(State::Moving, robot->state());
 }
 
 void test_invalid_messages_fail_safe() {
@@ -207,11 +247,15 @@ int main(int, char**) {
   RUN_TEST(test_stopped_before_the_first_status);
   RUN_TEST(test_stops_when_status_stops);
   RUN_TEST(test_non_running_status_stops_at_once);
-  RUN_TEST(test_low_confidence_stops);
+  RUN_TEST(test_low_confidence_is_ignored);
+  RUN_TEST(test_rest_stops_whatever_its_confidence);
+  RUN_TEST(test_action_has_its_own_threshold);
   RUN_TEST(test_stale_seq_ignored_and_reset_after_silence);
   RUN_TEST(test_obstacle_stop_and_pivot_away);
   RUN_TEST(test_speed_is_bounded);
-  RUN_TEST(test_u_turn_completes_despite_rest);
+  RUN_TEST(test_u_turn_completes_despite_rest_and_left);
+  RUN_TEST(test_opposite_rotation_cancels_u_turn);
+  RUN_TEST(test_forward_interrupts_u_turn);
   RUN_TEST(test_invalid_messages_fail_safe);
   RUN_TEST(test_disconnection_fails_safe);
   RUN_TEST(test_telemetry_is_a_protocol_event);

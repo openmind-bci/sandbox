@@ -51,6 +51,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Confidence thresholds per command (`robot.yaml` 1.1.0:
+  `safety.min_confidence_per_command`, `action` 0.85 by default). A command
+  below its threshold is now **ignored** instead of stopping the object;
+  `rest` always stops, whatever its confidence. Applied in the mock robot
+  (`--threshold COMMAND=VALUE`), the Godot scenes (one slider per command in
+  the command panel, remembered per scene) and the firmware (compiled, never
+  changed over the network).
+- U-turn of `action`: `rest`, `left` and a repeated `action` no longer affect
+  it, `right` cancels it and stops, `forward` interrupts it (mock robot, twin,
+  firmware).
+- Bird scene: a menu forces the calibration stage; the scene uses the common
+  `ObjectController` (with `virtual_scene`).
 - Default WebSocket port of the bridge and the cockpit: 8780 instead of 8765,
   a port that many WebSocket examples use and that is often already taken.
 - Electrode positions come from the MNE `colin27_1005` template (the new name

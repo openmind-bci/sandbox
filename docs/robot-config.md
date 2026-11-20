@@ -15,11 +15,19 @@ mock robot all read it, so that the virtual robots behave like the real one.
 | `safety.obstacle_stop_m` | m | 0.20 | no forward motion when an obstacle is closer |
 | `safety.sensor_range_m` | m | 4.0 | distance sensor range; beyond it nothing is seen |
 | `safety.status_timeout_s` | s | 2.0 | stop after this long without decoder status (at most 2 s) |
-| `safety.min_confidence` | 0-1 | 0.80 | commands below it stop the robot |
+| `safety.min_confidence` | 0-1 | 0.80 | default threshold: a command below its threshold is ignored |
+| `safety.min_confidence_per_command` | 0-1 | `left`, `right`, `forward` 0.80, `action` 0.85 | threshold of each command; `rest` has none (it always stops) |
 | `telemetry.rate_hz` | Hz | 5 | telemetry events on `openmind/v1/events` |
 
 Values are first estimates for a small two-wheeled robot; they will be measured
 on the real robot (task SBX-090) and adjusted here.
+
+## Versions
+
+| Version | Changes |
+|---|---|
+| 1.0.0 | First version. |
+| 1.1.0 | `safety.min_confidence_per_command`; a command below its threshold is ignored instead of stopping the robot, `rest` always stops. |
 
 ## Changing the file
 

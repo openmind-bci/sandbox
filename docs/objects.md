@@ -18,9 +18,16 @@ treat it as an event, not as a held command.
 
 Objects that move apply the safety rules of the protocol themselves, so they stay
 safe even if the decoder crashes: stop 2 s after the last `running` status (and
-at once on any other state), stop on a command below their confidence threshold,
-ignore stale `seq`, stop on an invalid message or a lost broker. The Python
-helper is `openmind_protocol.Watchdog`.
+at once on any other state), ignore stale `seq`, stop on an invalid message or a
+lost broker.
+
+**Confidence thresholds, per command.** A command below its threshold is
+**ignored**: the object keeps doing what it does. `rest` has no threshold: it
+**always stops** the object, since stopping is never risky. Defaults for the
+robot (`robot.yaml`): `left`, `right`, `forward` 0.80, `action` 0.85 (no U-turn by
+mistake). They can be changed per scene in the cockpit (command panel), with
+`mock-robot --threshold action=0.9`, or in `robot.yaml`; the real robot keeps the
+values compiled from `robot.yaml` and never takes new ones over the network.
 
 ## Robot twin (Godot)
 
@@ -28,10 +35,10 @@ The first scene of the [cockpit](cockpit.md): the robot of
 [`robot.yaml`](robot-config.md), seen from above, on a waypoint course. Its
 kinematics, state machine and obstacle stop are the same as the mock robot below
 (`godot/scenes/robot_twin/twin_robot.gd` mirrors `mock_robot.py`), with a
-confidence threshold of 0.8 like the real robot.
+per-command confidence thresholds of `robot.yaml`, like the real robot.
 
 The heads-up display shows the state, the speed, the distance ahead, the next
-waypoint, the time, the **errors** (commands refused below the confidence
+waypoint, the time, the **errors** (commands ignored below their confidence
 threshold during the run) and the **collisions avoided** (times the obstacle stop
 had to act). `R` restarts the course.
 
@@ -85,7 +92,8 @@ Events, with `"object": "wheelchair"`: `telemetry` (position, heading, speed,
 
 ```bash
 openmind-sandbox mock-robot                     # reads config/robot.yaml
-openmind-sandbox mock-robot --min-confidence 0.6
+openmind-sandbox mock-robot --min-confidence 0.6          # every command
+openmind-sandbox mock-robot --threshold action=0.9        # one command
 openmind-sandbox mock-robot --course scenarios/courses/twin_default.yaml
 ```
 
@@ -95,13 +103,19 @@ straight ahead of the start position (`x` 1.5 m, `y` 0.5 m, facing +y), or on a
 course with `--course`. Drive it
 with [`openmind-sandbox keys`](keys.md).
 
-A command stays in force until the next accepted one. The U-turn of `action` is a
-short maneuver: the `rest` that follows the gesture does not cut it; a movement
-command or a safety stop does.
+A command stays in force until the next accepted one. The U-turn of `action`
+(180°, counter-clockwise) is a short maneuver started by a one-shot gesture:
+
+| During a U-turn | Effect |
+|---|---|
+| `rest`, `left`, `action` | none, the U-turn goes on |
+| `right` (opposite rotation) | cancels it: the robot stops |
+| `forward` | interrupts it: the robot drives in its current direction |
+| safety stop | stops at once, as always |
 
 | State | When |
 |---|---|
-| `STOPPED` | `rest`, end of a U-turn, or a command below the confidence threshold (reason `low_confidence`) |
+| `STOPPED` | `rest` (whatever its confidence), end or cancellation of a U-turn |
 | `MOVING` | `forward` |
 | `PIVOTING` | `left`, `right`, U-turn |
 | `SAFETY_STOP` | `no_status` (at start, or decoder silent), `decoder_<state>` (status not `running`), `invalid_message`, `disconnected`, `obstacle` (closer than `obstacle_stop_m` ahead; pivoting away stays possible) |

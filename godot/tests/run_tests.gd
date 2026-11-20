@@ -24,6 +24,8 @@ func _run() -> void:
 	_om.autoconnect = false
 	_om.disconnect_from_bridge()
 	_om.clock = func() -> float: return _now
+	ObjectController.settings_path = "user://openmind_tests.cfg"
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(ObjectController.settings_path))
 
 	test_command_gate()
 	test_frames_and_heartbeat()
@@ -40,6 +42,7 @@ func _run() -> void:
 	await test_signal_panel()
 	await test_cockpit()
 
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(ObjectController.settings_path))
 	print("%d checks, %d failed" % [_checks, _failures])
 	quit(1 if _failures > 0 else 0)
 
@@ -73,15 +76,21 @@ func _command(name: String, confidence: float, seq: int) -> void:
 
 func test_command_gate() -> void:
 	var gate := CommandGate.new(0.8)
-	check(not gate.accept({"confidence": 0.9, "seq": 1}, false), "gate refuses a dead decoder")
+	var c := func(name: String, confidence: float, seq: int) -> Dictionary:
+		return {"command": name, "confidence": confidence, "seq": seq}
+	check(not gate.accept(c.call("left", 0.9, 1), false), "gate refuses a dead decoder")
 	check(gate.last_refusal == "decoder", "refusal reason decoder")
-	check(not gate.accept({"confidence": 0.79, "seq": 1}, true), "gate refuses low confidence")
+	check(not gate.accept(c.call("left", 0.79, 1), true), "gate refuses low confidence")
 	check(gate.last_refusal == "confidence", "refusal reason confidence")
-	check(gate.accept({"confidence": 0.8, "seq": 1}, true), "gate accepts at the threshold")
-	check(not gate.accept({"confidence": 0.9, "seq": 1}, true), "gate refuses a duplicate seq")
+	check(gate.accept(c.call("left", 0.8, 1), true), "gate accepts at the threshold")
+	check(not gate.accept(c.call("left", 0.9, 1), true), "gate refuses a duplicate seq")
 	check(gate.last_refusal == "stale", "refusal reason stale")
+	check(gate.accept(c.call("rest", 0.05, 2), true), "rest has no threshold")
+	gate.set_threshold("action", 0.9)
+	check(not gate.accept(c.call("action", 0.85, 3), true), "per-command threshold")
+	check(gate.accept(c.call("forward", 0.85, 3), true), "other commands keep theirs")
 	gate.reset()
-	check(gate.accept({"confidence": 0.9, "seq": 0}, true), "seq 0 accepted after reset")
+	check(gate.accept(c.call("left", 0.9, 0), true), "seq 0 accepted after reset")
 
 
 func test_frames_and_heartbeat() -> void:
@@ -199,17 +208,30 @@ func test_twin_robot() -> void:
 	robot.apply("action")
 	_drive(robot, 0.1)
 	robot.apply("rest")
+	_drive(robot, 0.5)
+	robot.apply("left")
+	robot.apply("action")
 	_drive(robot, 3.0)
 	check(robot.state == TwinRobot.STOPPED and absf(absf(robot.heading) - PI) < 1e-4,
-			"U-turn completes despite rest")
+			"U-turn completes despite rest, left and action")
 
 	robot = _twin()
-	robot.apply("forward")
+	robot.apply("action")
 	_drive(robot, 0.5)
-	robot.refuse_low_confidence()
-	_drive(robot, 0.1)
-	check(robot.state == TwinRobot.STOPPED and robot.reason == "low_confidence",
-			"low confidence stops")
+	var heading := robot.heading
+	robot.apply("right")
+	_drive(robot, 0.5)
+	check(robot.state == TwinRobot.STOPPED and is_equal_approx(robot.heading, heading),
+			"right cancels the U-turn")
+
+	robot = _twin()
+	robot.apply("action")
+	_drive(robot, 0.5)
+	robot.apply("forward")
+	_drive(robot, 0.2)
+	check(robot.state == TwinRobot.MOVING, "forward interrupts the U-turn")
+
+	robot = _twin()
 	robot.apply("forward")
 	_drive(robot, 0.2)
 	robot.halt()
@@ -367,6 +389,11 @@ func test_bird_scene() -> void:
 	# No bridge socket in tests: every marker is counted as not sent.
 	check(scene.markers_failed == 2 + 3 * scene.protocol.total_trials() + 4,
 			"session, trial and block markers are all emitted")
+	scene.set_manual_stage("thought")
+	check(scene.stage["id"] == "thought", "stage forced from the menu")
+	scene.set_manual_stage("")
+	check(scene.stage["id"] != "thought" or scene.protocol.block >= 3,
+			"back to the automatic stage")
 	scene.queue_free()
 	await process_frame
 
@@ -549,8 +576,27 @@ func test_cockpit() -> void:
 	check(scene.last_command == "forward", "scene receives an accepted command")
 	check(main.command_panel.command_label.text == "forward", "command panel shows it")
 	_command("left", 0.5, 11)
-	check(scene.last_command == "rest", "low confidence stops the scene object")
-	_command("left", 0.9, 12)
+	check(scene.last_command == "forward" and scene.robot.command == "forward",
+			"low confidence command is ignored")
+	_command("rest", 0.1, 12)
+	check(scene.last_command == "rest", "rest stops whatever its confidence")
+	check(main.command_panel.sliders.size() == 4, "one threshold slider per command")
+	check(is_equal_approx(main.command_panel.sliders["action"].value, 0.85),
+			"slider shows the robot.yaml threshold")
+	main.command_panel.sliders["left"].value = 0.4
+	check(is_equal_approx(scene.get_node("ObjectController").threshold("left"), 0.4),
+			"slider changes the scene threshold")
+	_command("left", 0.5, 13)
+	check(scene.last_command == "left", "command above the new threshold applies")
+	main.switch_scene("robot_twin")
+	await process_frame
+	scene = main.current_scene
+	check(is_equal_approx(scene.get_node("ObjectController").threshold("left"), 0.4),
+			"thresholds are remembered per scene")
+	scene.get_node("ObjectController").reset_thresholds()
+	check(is_equal_approx(main.command_panel.sliders["left"].value, 0.8),
+			"default thresholds restored")
+	_command("left", 0.9, 14)
 	check(scene.last_command == "left", "next good command applies")
 	_now += 2.5
 	_om._update_alive()

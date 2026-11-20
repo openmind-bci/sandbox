@@ -1,6 +1,6 @@
 {
   "_generated": "by `openmind-sandbox export-godot`; do not edit",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "geometry": {
     "wheel_base_m": 0.13,
     "wheel_diameter_m": 0.065,
@@ -17,7 +17,13 @@
     "obstacle_stop_m": 0.2,
     "sensor_range_m": 4.0,
     "status_timeout_s": 2.0,
-    "min_confidence": 0.8
+    "min_confidence": 0.8,
+    "min_confidence_per_command": {
+      "left": 0.8,
+      "right": 0.8,
+      "forward": 0.8,
+      "action": 0.85
+    }
   },
   "telemetry": {
     "rate_hz": 5.0

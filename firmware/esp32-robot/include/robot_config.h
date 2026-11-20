@@ -4,7 +4,7 @@
 
 namespace openmind {
 
-constexpr const char* kRobotConfigVersion = "1.0.0";
+constexpr const char* kRobotConfigVersion = "1.1.0";
 constexpr float kWheelBaseM = 0.13f;  // distance between the wheels, m
 constexpr float kWheelDiameterM = 0.065f;  // wheel diameter, m
 constexpr float kLengthM = 0.18f;  // body length, m
@@ -16,7 +16,10 @@ constexpr float kUturnDeg = 180.0f;  // turn made by action, deg
 constexpr float kObstacleStopM = 0.2f;  // no forward motion closer than this, m
 constexpr float kSensorRangeM = 4.0f;  // distance sensor range, m
 constexpr float kStatusTimeoutS = 2.0f;  // stop after this long without status, s
-constexpr float kMinConfidence = 0.8f;  // commands below this stop the robot
+constexpr float kMinConfidenceLeft = 0.8f;  // below: left is ignored
+constexpr float kMinConfidenceRight = 0.8f;  // below: right is ignored
+constexpr float kMinConfidenceForward = 0.8f;  // below: forward is ignored
+constexpr float kMinConfidenceAction = 0.85f;  // below: action is ignored
 constexpr float kTelemetryRateHz = 5.0f;  // telemetry events per second
 
 }  // namespace openmind

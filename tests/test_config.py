@@ -46,3 +46,17 @@ def test_invalid_configurations_are_rejected(
 ) -> None:
     with pytest.raises(ValueError, match=match):
         RobotConfig.load(edited(tmp_path, section, key, value))
+
+
+def test_thresholds_can_be_overridden() -> None:
+    from openmind_sandbox.config import with_thresholds
+
+    config = RobotConfig.load(ROBOT_YAML)
+    assert config.safety.threshold("action") == 0.85
+    changed = with_thresholds(config, 0.6, ["action=0.9"])
+    assert changed.safety.threshold("left") == 0.6
+    assert changed.safety.threshold("action") == 0.9
+    assert changed.safety.threshold("rest") == 0.0
+    for bad in (["jump=0.5"], ["action=2"], ["action"], ["action=x"]):
+        with pytest.raises(ValueError):
+            with_thresholds(config, None, bad)

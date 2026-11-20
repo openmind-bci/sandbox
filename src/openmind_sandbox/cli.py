@@ -15,7 +15,7 @@ import openmind_sandbox
 from openmind_sandbox import keyboard
 from openmind_sandbox.bridge import DEFAULT_WS_PORT
 from openmind_sandbox.calibration import Calibration
-from openmind_sandbox.config import RobotConfig
+from openmind_sandbox.config import RobotConfig, with_thresholds
 from openmind_sandbox.course import Course, export_godot_data
 from openmind_sandbox.keyboard_sim import (
     ACTION_KEYS,
@@ -220,7 +220,14 @@ def mock_robot(
     ] = None,
     min_confidence: Annotated[
         float | None,
-        typer.Option(min=0.0, max=1.0, help="Override safety.min_confidence of robot.yaml."),
+        typer.Option(min=0.0, max=1.0, help="Use this threshold for every command."),
+    ] = None,
+    threshold: Annotated[
+        list[str] | None,
+        typer.Option(
+            help="Threshold of one command, as COMMAND=VALUE (repeatable), "
+            "e.g. --threshold action=0.9."
+        ),
     ] = None,
     course: Annotated[
         Path | None,
@@ -240,9 +247,10 @@ def mock_robot(
     except (OSError, ValueError) as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(2) from error
-    if min_confidence is not None:
-        safety = robot_config.safety.model_copy(update={"min_confidence": min_confidence})
-        robot_config = robot_config.model_copy(update={"safety": safety})
+    try:
+        robot_config = with_thresholds(robot_config, min_confidence, threshold or [])
+    except ValueError as error:
+        raise typer.BadParameter(str(error), param_hint="--threshold") from error
     if course is not None:
         try:
             loaded_course = Course.load(course)
@@ -285,9 +293,13 @@ def mock_robot(
         typer.echo(str(error), err=True)
         raise typer.Exit(1) from error
 
+    safety = robot_config.safety
+    thresholds = ", ".join(
+        f"{name} {safety.threshold(name):.2f}" for name in ("left", "right", "forward", "action")
+    )
     typer.echo(
-        f"Mock robot (robot.yaml {robot_config.version}, min confidence "
-        f"{robot_config.safety.min_confidence:.2f}). Waiting for a decoder status. Ctrl+C to stop."
+        f"Mock robot (robot.yaml {robot_config.version}; thresholds {thresholds}; "
+        "rest always stops). Waiting for a decoder status. Ctrl+C to stop."
     )
     telemetry_period = 1.0 / robot_config.telemetry.rate_hz
     next_telemetry = 0.0

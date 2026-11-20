@@ -43,7 +43,7 @@ or from **Settings → Bridge address…** while it runs.
 |---|---|
 | 3D brain | band power at the sensors ([details](brain-panel.md)) |
 | Signal | scrolling EEG channels, 5 or 10 s, scale ±25 to ±200 µV; a flat (< 0.3 µV over 1 s) or saturated (> 400 µV) channel is named in orange. Needs `bridge --eeg` and a Plug stream. |
-| Command | last decoded command, confidence, decoder state |
+| Command | last decoded command, confidence, decoder state, and one **confidence threshold slider per command** for the current scene (remembered per scene; `rest` has none) |
 | Progress | score from `openmind/v1/score` |
 | Connection | bridge, broker and decoder heartbeat |
 
@@ -85,12 +85,16 @@ scene and connect its signals; it applies the common safety rules for you:
 
 | Signal | When |
 |---|---|
-| `command_accepted(command)` | decoder alive, confidence ≥ `min_confidence` of the scene, newer `seq` |
-| `command_refused(command, reason)` | `reason` is `decoder`, `confidence` (stop the object) or `stale` |
+| `command_accepted(command)` | decoder alive, confidence ≥ the threshold of that command (`rest`: none), newer `seq` |
+| `command_refused(command, reason)` | `reason` is `decoder`, `confidence` (ignore it: the object keeps going) or `stale` |
 | `safety_stop(reason)` | the decoder is no longer alive: stop the object now |
 | `resumed` | the decoder is back; wait for a new command |
 
-Set `min_confidence` per scene (0.8 for scenes that mirror a real object). Add
+Set `min_confidence` and `default_thresholds` per scene (0.8 for scenes that
+mirror a real object, or `configure()` from data such as `robot.json`); users
+adjust them in the command panel and they are kept in `user://openmind.cfg`.
+Set `virtual_scene` only for scenes that drive nothing real (the calibration
+bird), so that a `calibrating` decoder also gives feedback. Add
 the scene to `SCENES` in `app/main.gd`. The four scenes are placeholders until
 their tasks (SBX-050 to SBX-075); they show the command mapping and the last
 accepted command.

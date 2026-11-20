@@ -19,4 +19,5 @@ def test_header_carries_the_safety_values() -> None:
     header = robot_config_header(RobotConfig.load(ROOT / "config" / "robot.yaml"))
     assert "constexpr float kObstacleStopM = 0.2f;" in header
     assert "constexpr float kStatusTimeoutS = 2.0f;" in header
-    assert 'kRobotConfigVersion = "1.0.0"' in header
+    assert "constexpr float kMinConfidenceAction = 0.85f;" in header
+    assert 'kRobotConfigVersion = "1.1.0"' in header

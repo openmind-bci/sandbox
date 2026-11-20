@@ -19,7 +19,14 @@ struct RobotParams {
   float uturnDeg;
   float obstacleStopM;
   float statusTimeoutS;
-  float minConfidence;
+  // Confidence thresholds; a command below its threshold is ignored. `rest`
+  // has none: it always stops the robot.
+  float minConfidenceLeft;
+  float minConfidenceRight;
+  float minConfidenceForward;
+  float minConfidenceAction;
+
+  float threshold(Command command) const;
 };
 
 // Parameters of include/robot_config.h (generated from config/robot.yaml).
@@ -56,6 +63,7 @@ class RobotCore {
   Command command() const { return command_; }
   float speed() const { return speed_; }
   float turnRateDps() const { return turnRateDps_; }
+  uint32_t ignoredLowConfidence() const { return ignoredLowConfidence_; }
   bool decoderAlive(uint32_t nowMs) const;
 
   // Telemetry JSON (protocol `event`, object "robot", kind "telemetry").
@@ -69,7 +77,6 @@ class RobotCore {
   RobotParams p_;
   State state_ = State::SafetyStop;
   const char* reason_ = "no_status";
-  const char* commandReason_ = "";
   const char* fault_ = nullptr;
   Command command_ = Command::Rest;
   float speed_ = 0.0f;
@@ -82,6 +89,7 @@ class RobotCore {
   bool stepped_ = false;
   bool haveSeq_ = false;
   int64_t lastSeq_ = -1;
+  uint32_t ignoredLowConfidence_ = 0;
   char statusReason_[32] = "decoder_";  // "decoder_<state>" when not running
 };
 

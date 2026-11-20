@@ -39,7 +39,6 @@ var clearance := INF
 var collisions_avoided := 0
 
 var _halted := true
-var _command_reason := ""
 var _transitions: Array[Array] = []
 
 
@@ -92,7 +91,6 @@ func halt(why: String = "no_status") -> void:
 
 func resume() -> void:
 	_halted = false
-	_command_reason = ""
 
 
 ## Apply an accepted command. Returns the id of the door opened by an action,
@@ -107,17 +105,9 @@ func apply(name: String) -> String:
 		door["open"] = true
 		return str(door["id"])
 	command = name
-	_command_reason = ""
 	if name == "rest":
 		_stop()  # stop at once
 	return ""
-
-
-func refuse_low_confidence() -> void:
-	if _halted:
-		return
-	_stop()
-	_command_reason = "low_confidence"
 
 
 ## The closed door the chair faces within reach, or an empty dictionary.
@@ -162,7 +152,7 @@ func step(dt: float) -> void:
 			_set_state(TURNING, "")
 		_:
 			_stop()
-			_set_state(STOPPED, _command_reason)
+			_set_state(STOPPED, "")
 	clearance = measure()
 
 

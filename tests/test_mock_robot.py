@@ -127,28 +127,38 @@ def test_non_running_status_stops_immediately(state: str) -> None:
 # --- Confidence and order ----------------------------------------------------
 
 
-def test_low_confidence_command_stops_the_robot() -> None:
+def test_low_confidence_command_is_ignored() -> None:
     h = Harness()
     h.status()
     h.command("forward")
     h.run(1.0)
-    assert h.robot.speed > 0
-    h.command("forward", confidence=CONFIG.safety.min_confidence - 0.01)
+    speed = h.robot.speed
+    h.command("left", confidence=CONFIG.safety.threshold("left") - 0.01)
+    h.run(DT)
+    assert h.robot.state is RobotState.MOVING  # keeps going
+    assert h.robot.speed >= speed
+    assert h.robot.ignored_low_confidence == 1
+
+
+def test_rest_stops_whatever_its_confidence() -> None:
+    h = Harness()
+    h.status()
+    h.command("forward")
+    h.run(1.0)
+    h.command("rest", confidence=0.05)
     h.run(DT)
     assert h.robot.state is RobotState.STOPPED
-    assert h.robot.reason == "low_confidence"
     assert h.robot.speed == 0
 
 
-def test_valid_command_after_a_low_confidence_stop_is_reported() -> None:
+def test_thresholds_are_per_command() -> None:
+    assert CONFIG.safety.threshold("action") > CONFIG.safety.threshold("forward")
+    assert CONFIG.safety.threshold("rest") == 0.0
     h = Harness()
     h.status()
-    h.command("forward", confidence=0.1)
-    h.run(0.1)
-    h.robot.pop_transitions()
-    h.command("rest")
-    h.run(0.1)
-    assert h.robot.pop_transitions() == [(RobotState.STOPPED, None)]
+    h.command("action", confidence=0.82)  # enough for a movement, not for action
+    h.run(0.5)
+    assert h.robot.state is RobotState.STOPPED
 
 
 def test_command_at_the_threshold_is_applied() -> None:
@@ -279,18 +289,33 @@ def test_rest_stops() -> None:
     assert h.robot.speed == 0
 
 
-def test_action_makes_a_u_turn_that_rest_does_not_cut() -> None:
+def test_action_makes_a_u_turn_that_rest_and_left_do_not_cut() -> None:
     h = Harness()
     h.status()
     h.command("action")
     h.run(0.1)
     h.command("rest")  # what a decoder sends right after the gesture
+    h.run(0.5)
+    h.command("left")
+    h.command("action")  # no second U-turn stacked
     h.run(3.0)
     assert h.robot.state is RobotState.STOPPED
     assert abs(h.robot.pose.heading) == pytest.approx(math.pi, abs=1e-6)
 
 
-def test_movement_command_interrupts_a_u_turn() -> None:
+def test_opposite_rotation_cancels_a_u_turn() -> None:
+    h = Harness()
+    h.status()
+    h.command("action")
+    h.run(0.5)
+    heading = h.robot.pose.heading
+    h.command("right")
+    h.run(0.5)
+    assert h.robot.state is RobotState.STOPPED
+    assert h.robot.pose.heading == pytest.approx(heading, abs=1e-6)
+
+
+def test_forward_interrupts_a_u_turn() -> None:
     h = Harness()
     h.status()
     h.command("action")

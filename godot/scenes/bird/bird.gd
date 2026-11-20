@@ -6,7 +6,8 @@ extends Control
 ## them to MQTT and LSL for OpenMind Core. During imagery the bird stays at the
 ## centre and only the scenery moves; it follows the cue by itself in proportion
 ## to the assistance announced by the decoder, and fully when the decoded command
-## matches the cue. Space or Enter starts, Escape stops, N skips a break.
+## matches the cue. The stage follows the assistance (else the block), or the
+## stage chosen in the menu. Space or Enter starts, Escape stops, N skips a break.
 
 const SCENE_NAME := "calibration"
 const DEFAULT_PROTOCOL := "res://data/calibration_default.json"
@@ -15,8 +16,6 @@ const SPEED := Vector2(160, 110)
 const MAX_BANK := 0.5
 
 @export_file("*.json") var protocol_path := DEFAULT_PROTOCOL
-## Confidence below which a decoded command does not move the bird.
-@export_range(0.0, 1.0, 0.01) var min_confidence := 0.6
 
 var protocol: CalibrationProtocol
 var running := false
@@ -26,8 +25,9 @@ var markers_failed := 0
 var last_match := -1.0
 var last_command := "rest"
 var stage: Dictionary = {}
+## Stage forced from the menu ("" = automatic: assistance, else block number).
+var manual_stage := ""
 
-var _gate := CommandGate.new()
 var _decoded := "rest"
 var _match_time := 0.0
 var _imagery_time := 0.0
@@ -37,15 +37,22 @@ var _openmind: Node = null
 
 @onready var _view: BirdView = $BirdView
 @onready var _start: Button = %StartButton
+@onready var _controller: ObjectController = $ObjectController
+@onready var _stage_choice: OptionButton = %StageChoice
 
 
 func _ready() -> void:
 	_openmind = get_node_or_null("/root/OpenMind")
-	_gate.min_confidence = min_confidence
 	protocol = CalibrationProtocol.from_file(protocol_path)
+	_controller.command_accepted.connect(_on_command)
 	if _openmind != null:
-		_openmind.command_received.connect(_on_command)
 		_openmind.score_received.connect(_on_score)
+	_stage_choice.add_item("Stage: automatic")
+	for s in protocol.stages:
+		_stage_choice.add_item("Stage: %s" % s["title"])
+	_stage_choice.custom_minimum_size = Vector2(0, OpenMindTheme.MIN_TARGET)
+	_stage_choice.item_selected.connect(func(i: int) -> void:
+			set_manual_stage("" if i == 0 else str(protocol.stages[i - 1]["id"])))
 	_start.pressed.connect(start_session)
 	_start.text = "Start calibration (%d trials)" % protocol.total_trials()
 	_start.custom_minimum_size = Vector2(320, OpenMindTheme.MIN_TARGET)
@@ -156,14 +163,17 @@ func _animate(delta: float) -> void:
 	_view.bank = lerpf(_view.bank, bank_target, minf(1.0, 6.0 * delta))
 
 
+## Force a stage by id, or "" to go back to the automatic choice.
+func set_manual_stage(stage_id: String) -> void:
+	manual_stage = stage_id
+	_update_stage()
+
+
 func _on_command(command: Dictionary) -> void:
-	var alive: bool = _openmind != null and _openmind.feedback_alive()
-	if _gate.accept(command, alive):
-		_decoded = str(command.get("command", "rest"))
-		last_command = _decoded
-	elif _gate.last_refusal == "confidence":
-		_decoded = "rest"
-		last_command = "rest"
+	# Accepted by the ObjectController (virtual scene: a calibrating decoder
+	# counts). Below its threshold a command is ignored and the bird keeps going.
+	_decoded = str(command.get("command", "rest"))
+	last_command = _decoded
 
 
 func _on_score(score: Dictionary) -> void:
@@ -173,7 +183,7 @@ func _on_score(score: Dictionary) -> void:
 
 func _assistance() -> float:
 	var announced: float = _openmind.assistance() if _openmind != null else -1.0
-	if announced >= 0.0:
+	if announced >= 0.0 and manual_stage.is_empty():
 		return announced
 	return float(stage.get("max_assistance", 1.0))
 
@@ -181,6 +191,10 @@ func _assistance() -> float:
 func _update_stage() -> void:
 	var announced: float = _openmind.assistance() if _openmind != null else -1.0
 	var new_stage := protocol.stage_for(announced)
+	if not manual_stage.is_empty():
+		for s in protocol.stages:
+			if s["id"] == manual_stage:
+				new_stage = s
 	if not stage.is_empty() and new_stage.get("id") != stage.get("id"):
 		_view.banner = "Next stage: %s" % new_stage.get("title", "")
 		_banner_left = 4.0

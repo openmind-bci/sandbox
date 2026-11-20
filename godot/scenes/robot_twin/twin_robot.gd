@@ -42,7 +42,6 @@ var collisions_avoided := 0
 
 var _uturn_left := 0.0
 var _halted := true
-var _command_reason := ""
 var _transitions: Array[Array] = []
 
 
@@ -85,28 +84,23 @@ func halt(why: String = "no_status") -> void:
 ## The decoder is back: wait for a new command, stopped.
 func resume() -> void:
 	_halted = false
-	_command_reason = ""
 
 
-## Apply a command already accepted by the ObjectController.
+## Apply a command already accepted by the ObjectController. During a U-turn,
+## rest, left and action do not cut it, right (the opposite rotation) cancels it
+## and stops, forward interrupts it.
 func apply(name: String) -> void:
 	if _halted:
 		return
+	if command == "action":
+		if name in ["rest", "left", "action"]:
+			return
+		if name == "right":
+			_stop_command()
+			return
 	if name == "action":
-		if command != "action":
-			_uturn_left = uturn
-	elif name == "rest" and command == "action":
-		return  # a U-turn completes; only a movement command or safety ends it
+		_uturn_left = uturn
 	command = name
-	_command_reason = ""
-
-
-## A command below the confidence threshold stops the robot.
-func refuse_low_confidence() -> void:
-	if _halted:
-		return
-	_stop_command()
-	_command_reason = "low_confidence"
 
 
 func step(dt: float) -> void:
@@ -148,7 +142,7 @@ func step(dt: float) -> void:
 		_:
 			speed = 0.0
 			turn_rate = 0.0
-			_set_state(STOPPED, _command_reason)
+			_set_state(STOPPED, "")
 	heading = wrapf(heading + turn_rate * dt, -PI, PI)
 	var distance := speed * dt
 	if distance > 0.0:

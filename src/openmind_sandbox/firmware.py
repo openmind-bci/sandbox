@@ -31,7 +31,10 @@ def robot_config_header(config: RobotConfig) -> str:
         ("kObstacleStopM", safety.obstacle_stop_m, "no forward motion closer than this, m"),
         ("kSensorRangeM", safety.sensor_range_m, "distance sensor range, m"),
         ("kStatusTimeoutS", safety.status_timeout_s, "stop after this long without status, s"),
-        ("kMinConfidence", safety.min_confidence, "commands below this stop the robot"),
+        ("kMinConfidenceLeft", safety.threshold("left"), "below: left is ignored"),
+        ("kMinConfidenceRight", safety.threshold("right"), "below: right is ignored"),
+        ("kMinConfidenceForward", safety.threshold("forward"), "below: forward is ignored"),
+        ("kMinConfidenceAction", safety.threshold("action"), "below: action is ignored"),
         ("kTelemetryRateHz", config.telemetry.rate_hz, "telemetry events per second"),
     ]
     lines = [

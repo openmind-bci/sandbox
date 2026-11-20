@@ -42,12 +42,14 @@ Every trial gets the three markers, including a trial cut short by Escape.
   `forward` (the bird flaps), gliding for `rest`.
 - The bird follows the cue by itself in proportion to the **assistance** the
   decoder announces in `status` (1 = fully assisted), and fully when the decoded
-  command matches the cue (confidence ≥ 0.6). Commands are taken into account
+  command matches the cue (confidence ≥ 0.6 by default, adjustable per command in
+  the command panel; below it a command is ignored). Commands are taken into account
   while the decoder is `running` or `calibrating`: the bird is virtual, unlike
   scenes that mirror a real object.
 - **Stages** adapt the instruction: *discovery* (make the movement gently),
   *transition* (start the movement, then imagine it), *thought* (imagine only).
-  The stage follows the assistance (≤ 1, ≤ 0.66, ≤ 0.33), or the block number
+  A menu in the scene forces a stage (for a demonstration or a supervised
+  session); on *automatic*, the stage follows the assistance (≤ 1, ≤ 0.66, ≤ 0.33), or the block number
   when the decoder sends no assistance; a banner announces the next stage.
 - The footer shows the block and trial, the share of the last imagery during
   which the decoded command matched the cue, and the score from

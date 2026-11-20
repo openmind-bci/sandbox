@@ -4,7 +4,7 @@
 # Any change here must be applied to all three together, with a new version
 # (SemVer: major for a renamed or removed key, minor for a new key, patch for
 # a value change) and a CHANGELOG entry. See docs/robot-config.md.
-version: 1.0.0
+version: 1.1.0
 
 geometry:
   wheel_base_m: 0.13        # distance between the two wheel contact points
@@ -22,7 +22,14 @@ safety:
   obstacle_stop_m: 0.20     # no forward motion when an obstacle is closer
   sensor_range_m: 4.0       # HC-SR04 maximum range; beyond it: no obstacle seen
   status_timeout_s: 2.0     # stop after this long without a decoder status
-  min_confidence: 0.80      # commands below this confidence stop the robot
+  # A command below its threshold is ignored (the robot keeps doing what it
+  # does); `rest` always stops the robot, whatever its confidence.
+  min_confidence: 0.80      # default threshold
+  min_confidence_per_command:
+    left: 0.80
+    right: 0.80
+    forward: 0.80
+    action: 0.85            # stricter: no U-turn by mistake
 
 telemetry:
   rate_hz: 5.0              # telemetry events on openmind/v1/events

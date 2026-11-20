@@ -1,8 +1,10 @@
 extends Control
 ## Robot twin scene: the robot of config/robot.yaml on a waypoint course.
 ##
-## Commands come through the ObjectController (decoder alive, confidence ≥ 0.8,
-## newer seq); the twin applies the same obstacle stop as the firmware. Telemetry,
+## Commands come through the ObjectController (decoder alive, per-command
+## confidence thresholds of robot.yaml, newer seq; below its threshold a command
+## is ignored, rest always stops); the twin applies the same obstacle stop as the
+## firmware. Telemetry,
 ## state changes and course events are published on openmind/v1/events with
 ## "object": "robot-twin", for the evaluation and the comparison with the real
 ## robot. R restarts the course.
@@ -31,6 +33,9 @@ func _ready() -> void:
 	_openmind = get_node_or_null("/root/OpenMind")
 	var config := TwinRobot.load_config(ROBOT_CONFIG)
 	robot = TwinRobot.new(config)
+	if config.has("safety"):
+		_controller.configure(float(config["safety"]["min_confidence"]),
+				config["safety"].get("min_confidence_per_command", {}))
 	if config.has("telemetry"):
 		_telemetry_period = 1.0 / float(config["telemetry"]["rate_hz"])
 	course = TwinCourse.from_file(course_path)
@@ -86,11 +91,10 @@ func _on_command(command: Dictionary) -> void:
 
 
 func _on_refused(_command: Dictionary, reason: String) -> void:
-	if reason == "confidence":
-		last_command = "rest"
-		robot.refuse_low_confidence()
-		if course.started and not course.finished:
-			course.errors += 1
+	# Below its threshold a command is ignored: the robot keeps going. The run
+	# counts these hesitations as errors.
+	if reason == "confidence" and course.started and not course.finished:
+		course.errors += 1
 
 
 func _stop(reason: String) -> void:
