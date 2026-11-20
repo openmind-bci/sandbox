@@ -3,9 +3,9 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^godot/addons/openmind/fonts/
+        exclude: ^godot/(addons/openmind/fonts|assets)/
       - id: end-of-file-fixer
-        exclude: ^godot/addons/openmind/fonts/
+        exclude: ^godot/(addons/openmind/fonts|assets)/
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files
