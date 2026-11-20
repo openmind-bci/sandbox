@@ -2,7 +2,8 @@
 
 Textures (1K JPG: colour, OpenGL normal, roughness), HDRI skies (1K HDR) and
 scanned models (1K glTF with their textures) go to ``godot/assets/polyhaven/<id>/``;
-they are committed through Git LFS and credited in ASSETS.md. Run again after changing the lists below:
+they are committed through Git LFS and credited in ASSETS.md. Run again after
+changing the lists below:
 
     uv run python tools/fetch_polyhaven.py
 
