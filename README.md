@@ -30,12 +30,12 @@ malformed messages, even if Core crashes.
 
 ## Status
 
-Pre-alpha: repository skeleton. See [CHANGELOG.md](CHANGELOG.md).
+Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHANGELOG.md).
 
 | Component | Status |
 |---|---|
 | Local MQTT broker (Mosquitto, Docker) | available |
-| Keyboard command simulator (`keys`) | planned |
+| Keyboard command simulator and fake band power (`keys`) | available |
 | `robot.yaml` and mock robot (`mock-robot`) | planned |
 | MQTT ↔ WebSocket ↔ LSL gateway (`bridge`) | planned |
 | Godot cockpit: robot twin, bird, wheelchair, live 3D brain | planned |
@@ -65,6 +65,18 @@ Docker (anonymous access, **development only**, see [docs/dev-broker.md](docs/de
 docker compose -f dev/docker-compose.yml up -d    # MQTT on 1883, WebSocket on 9001
 docker compose -f dev/docker-compose.yml down     # stop it
 ```
+
+## Quick start without a headset
+
+With the broker running, simulate a live decoder from the keyboard (arrows, space
+for `action`, `q` to quit) or from a script:
+
+```bash
+uv run openmind-sandbox keys
+uv run openmind-sandbox keys --script examples/keys-demo.yaml --bandpower
+```
+
+Details: [docs/keys.md](docs/keys.md).
 
 ## Data and privacy
 

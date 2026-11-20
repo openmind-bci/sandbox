@@ -62,7 +62,7 @@ allow-direct-references = true
 packages = ["src/openmind_sandbox"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/", "tests/", "config/", "scenarios/", "README.md", "LICENSE", "CHANGELOG.md"]
+include = ["src/", "tests/", "config/", "scenarios/", "examples/", "README.md", "LICENSE", "CHANGELOG.md"]
 
 # --- Lint & format ---------------------------------------------------------
 

@@ -1,0 +1,15 @@
+# Demo sequence for `openmind-sandbox keys --script examples/keys-demo.yaml`.
+# Each step holds a command for `duration` seconds; `action` sends one action
+# then rest until the step ends. `confidence` overrides --confidence.
+user: P00
+loop: false
+steps:
+  - {command: rest, duration: 2}
+  - {command: forward, duration: 3}
+  - {command: left, duration: 1.5}
+  - {command: forward, duration: 2}
+  - {command: right, duration: 1.5, confidence: 0.75}
+  - {command: rest, duration: 1}
+  - {command: action, duration: 1}
+  - {command: forward, duration: 2, confidence: 0.4}  # below most object thresholds
+  - {command: rest, duration: 2}
