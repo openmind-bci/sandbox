@@ -6,7 +6,7 @@ tool...), and publishes the markers of the scenes on LSL, so that OpenMind Core
 can align cues with the EEG on the same clock.
 
 ```bash
-openmind-sandbox bridge                      # ws://127.0.0.1:8765, LSL on
+openmind-sandbox bridge                      # ws://127.0.0.1:8780, LSL on
 openmind-sandbox bridge --ws-port 9000 --no-lsl -v
 ```
 

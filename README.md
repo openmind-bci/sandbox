@@ -91,7 +91,7 @@ uv run openmind-sandbox mock-robot
 ```
 
 For the Godot cockpit and other WebSocket clients, start the gateway
-(WebSocket on `ws://127.0.0.1:8765`, scene markers also published on LSL):
+(WebSocket on `ws://127.0.0.1:8780`, scene markers also published on LSL):
 
 ```bash
 uv run openmind-sandbox bridge

@@ -51,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Default WebSocket port of the bridge and the cockpit: 8780 instead of 8765,
+  a port that many WebSocket examples use and that is often already taken.
 - Electrode positions come from the MNE `colin27_1005` template (the new name
   of `standard_1005`, identical positions) when MNE provides it.
 
@@ -68,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   See `docs/cockpit.md`.
 - `bridge`: clear message when the WebSocket port is already taken.
 - Gateway `openmind-sandbox bridge`: relays every valid protocol message from
-  MQTT to WebSocket clients (`ws://127.0.0.1:8765`), drops and logs invalid
+  MQTT to WebSocket clients (`ws://127.0.0.1:8780`), drops and logs invalid
   ones, accepts markers and events from clients (validated, `v` and `ts`
   filled in), publishes them on MQTT and pushes markers on the LSL stream
   `openmind-markers` (back-dated by their transit delay). Clients are told

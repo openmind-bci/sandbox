@@ -13,6 +13,7 @@ from openmind_protocol import Command, Message, ProtocolError, Status, decode_to
 
 import openmind_sandbox
 from openmind_sandbox import keyboard
+from openmind_sandbox.bridge import DEFAULT_WS_PORT
 from openmind_sandbox.calibration import Calibration
 from openmind_sandbox.config import RobotConfig
 from openmind_sandbox.course import Course, export_godot_data
@@ -352,7 +353,7 @@ def bridge(
     ws_host: Annotated[
         str, typer.Option(help="WebSocket address; 127.0.0.1 accepts this machine only.")
     ] = "127.0.0.1",
-    ws_port: Annotated[int, typer.Option(help="WebSocket port.")] = 8765,
+    ws_port: Annotated[int, typer.Option(help="WebSocket port.")] = DEFAULT_WS_PORT,
     lsl: Annotated[
         bool, typer.Option(help="Publish received markers on the LSL markers stream.")
     ] = True,
@@ -389,8 +390,8 @@ def bridge(
     except OSError as error:
         typer.echo(
             f"cannot listen on {ws_host}:{ws_port} ({error.strerror or error}); "
-            "another program may use this port: try --ws-port 8766 and start the cockpit "
-            "with `-- --bridge=ws://127.0.0.1:8766`.",
+            "another program may use this port: try --ws-port 8781 and start the cockpit "
+            "with `-- --bridge=ws://127.0.0.1:8781`.",
             err=True,
         )
         raise typer.Exit(1) from error

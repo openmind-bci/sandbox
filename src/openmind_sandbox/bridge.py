@@ -18,7 +18,7 @@ Godot has no MQTT client: it talks to this bridge over a plain WebSocket.
 - **EEG (optional).** With ``eeg=True``, the LSL EEG stream is relayed read-only
   to the clients for the signal panel (see :mod:`openmind_sandbox.eeg_relay`).
 
-The WebSocket listens on ``127.0.0.1:8765`` by default: local clients only.
+The WebSocket listens on ``127.0.0.1:8780`` by default: local clients only.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ from openmind_sandbox.mqtt import DEFAULT_HOST, DEFAULT_PORT, MqttLink
 log = logging.getLogger(__name__)
 
 DEFAULT_WS_HOST: Final = "127.0.0.1"
-DEFAULT_WS_PORT: Final = 8765
+DEFAULT_WS_PORT: Final = 8780
 
 #: Message kinds a client may send through the bridge.
 CLIENT_KINDS: Final = ("marker", "event")

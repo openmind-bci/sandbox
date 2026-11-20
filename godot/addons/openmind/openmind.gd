@@ -20,7 +20,7 @@ signal message_rejected(error: String)
 ## Chunk of the EEG stream relayed by `bridge --eeg`: srate, labels, samples (rows).
 signal eeg_received(frame: Dictionary)
 
-const DEFAULT_URL := "ws://127.0.0.1:8765"
+const DEFAULT_URL := "ws://127.0.0.1:8780"
 ## Seconds without status after which the decoder is considered gone.
 const STATUS_TIMEOUT_S := 2.0
 const RECONNECT_MIN_S := 0.5

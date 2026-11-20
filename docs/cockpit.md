@@ -26,13 +26,13 @@ cockpit from which every object scene is driven.
 2. Open `godot/project.godot` in Godot 4.5 and press F5, or run
    `godot --path godot`.
 
-The cockpit connects to `ws://127.0.0.1:8765` and reconnects on its own. If that
-port is taken on your machine, start the bridge with `--ws-port 8766` and give the
+The cockpit connects to `ws://127.0.0.1:8780` and reconnects on its own. If that
+port is taken on your machine, start the bridge with `--ws-port 8781` and give the
 same address to the cockpit, either on the command line or in the environment:
 
 ```bash
-godot --path godot -- --bridge=ws://127.0.0.1:8766
-OPENMIND_BRIDGE_URL=ws://127.0.0.1:8766 godot --path godot
+godot --path godot -- --bridge=ws://127.0.0.1:8781
+OPENMIND_BRIDGE_URL=ws://127.0.0.1:8781 godot --path godot
 ```
 
 or from **Settings → Bridge address…** while it runs.
