@@ -44,7 +44,8 @@ Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHA
 | Wheelchair scene: apartment, doors opened with `action` | available |
 | Live 3D brain panel (sensor-level band power) | available |
 | Signal panel (EEG relayed read-only by `bridge --eeg`) | available |
-| Boat scene, 2D check tool | planned |
+| 2D topographic check of band power (`tools/check_topomap.py`) | available |
+| Boat scene | planned |
 | ESP32 robot firmware | planned |
 | Adapter template for your own object | planned |
 

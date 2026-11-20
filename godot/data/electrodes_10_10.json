@@ -1,5 +1,5 @@
 {
- "_generated": "by tools/generate_electrodes.py (MNE standard_1005); do not edit",
+ "_generated": "by tools/generate_electrodes.py (MNE 10-05 template); do not edit",
  "frame": "MNE head frame, metres: x right, y front, z up",
  "electrodes": {
   "Fp1": [

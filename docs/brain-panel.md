@@ -34,6 +34,19 @@ Controls: drag to rotate, **Top / Left / Right** views, **mu / beta** band,
 3. a public recording replayed by Plug with `openmind-core bandpower` (real,
    noisier activity).
 
+## 2D check
+
+When in doubt, compare with a classic topographic map drawn by MNE from the same
+messages (same colours and scale; electrodes not OK are grey crosses):
+
+```bash
+uv run --with "mne>=1.7" --with matplotlib python tools/check_topomap.py
+uv run --with "mne>=1.7" --with matplotlib python tools/check_topomap.py --once --output map.png
+```
+
+It also prints the electrode with the lowest value (`lowest rel_mu: C4 (-0.43)`):
+the same area must turn blue in the 3D panel.
+
 ## How it is built
 
 - **Brain surface**: a schematic shape generated in code
@@ -42,7 +55,7 @@ Controls: drag to rotate, **Top / Left / Right** views, **mu / beta** band,
   license to track. An anatomical mesh (for example FreeSurfer `fsaverage`,
   which must be downloaded by script and never committed) can replace it later.
 - **Electrode positions**: `godot/data/electrodes_10_10.json`, generated from the
-  MNE `standard_1005` montage by `tools/generate_electrodes.py`
+  MNE 10-05 template montage (`colin27_1005`, formerly `standard_1005`) by `tools/generate_electrodes.py`
   (`uv run --with "mne>=1.7" python tools/generate_electrodes.py`). Positions are
   in the MNE head frame and match OpenMind Plug.
 - **Colouring** (`brain_colors.gd`): Gaussian weights (σ = 24 mm) from every

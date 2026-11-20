@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `tools/check_topomap.py`: MNE topographic map of the band power messages,
+  live or saved once to an image, with the colours of the 3D panel and the
+  lowest electrode printed, to cross-check the 3D brain.
 - Signal panel: scrolling EEG channels (5 or 10 s window, adjustable scale,
   flat and saturated channels flagged), fed by `bridge --eeg`, which relays the
   LSL `openmind-eeg` stream read-only in compact frames of at most 1 s.
@@ -40,6 +43,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Courses in `scenarios/courses/` (YAML, validated), `mock-robot --course`,
   and `openmind-sandbox export-godot` writing JSON copies of `robot.yaml` and
   the courses for Godot (a test checks they are up to date).
+
+### Changed
+
+- Electrode positions come from the MNE `colin27_1005` template (the new name
+  of `standard_1005`, identical positions) when MNE provides it.
 
 ### Fixed
 

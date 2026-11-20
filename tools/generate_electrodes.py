@@ -1,4 +1,4 @@
-"""Generate godot/data/electrodes_10_10.json from the MNE standard 10-05 montage.
+"""Generate godot/data/electrodes_10_10.json from the MNE 10-05 template montage.
 
 Run from the repository root (MNE is only needed for this script):
 
@@ -24,8 +24,16 @@ PO7 PO3 POz PO4 PO8 O1 Oz O2 Iz
 """.split()  # noqa: SIM905 - one readable line per row of the 10-10 grid
 
 
+def standard_montage_name() -> str:
+    """Name of the MNE 10-05 template: ``colin27_1005`` (MNE >= 1.12), else ``standard_1005``."""
+    import mne
+
+    names = mne.channels.get_builtin_montages()
+    return "colin27_1005" if "colin27_1005" in names else "standard_1005"
+
+
 def main() -> None:
-    montage = mne.channels.make_standard_montage("standard_1005")
+    montage = mne.channels.make_standard_montage(standard_montage_name())
     positions = montage.get_positions()["ch_pos"]
     electrodes = {
         label: [round(float(v), 5) for v in positions[label]]
@@ -33,7 +41,7 @@ def main() -> None:
         if label in positions
     }
     document = {
-        "_generated": "by tools/generate_electrodes.py (MNE standard_1005); do not edit",
+        "_generated": "by tools/generate_electrodes.py (MNE 10-05 template); do not edit",
         "frame": "MNE head frame, metres: x right, y front, z up",
         "electrodes": electrodes,
     }
