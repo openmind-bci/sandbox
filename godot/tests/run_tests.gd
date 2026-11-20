@@ -40,6 +40,7 @@ func _run() -> void:
 	await test_bird_scene()
 	test_chair()
 	await test_3d_worlds()
+	await test_boat()
 	await test_brain()
 	await test_signal_panel()
 	await test_cockpit()
@@ -603,6 +604,64 @@ func test_3d_worlds() -> void:
 	for mode in ["first_person", "top", "chase"]:
 		chair_world.cycle_camera()
 		check(chair_world.camera_mode == mode, "wheelchair camera %s" % mode)
+	scene.queue_free()
+	await process_frame
+
+
+func _boat() -> BoatModel:
+	var course := TwinCourse.from_file("res://data/courses/boat_lake.json")
+	var boat := BoatModel.from_course(course)
+	boat.resume()
+	return boat
+
+
+func _sail(boat: BoatModel, seconds: float) -> void:
+	for i in roundi(seconds / 0.05):
+		boat.step(0.05)
+
+
+func test_boat() -> void:
+	var boat := _boat()
+	boat.apply("forward")
+	_sail(boat, 2.0)
+	check(boat.speed > 0.5 and boat.speed < boat.max_speed, "sail up: the boat speeds up slowly")
+	_sail(boat, 15.0)
+	check(boat.speed > 2.0, "sail up: cruising speed")
+	var cruising := boat.speed
+	boat.apply("rest")
+	_sail(boat, 2.0)
+	check(boat.speed > 0.5 * cruising and boat.speed < cruising, "sail down: slows down slowly")
+	var heading := boat.heading
+	boat.apply("left")
+	_sail(boat, 2.0)
+	check(boat.heading > heading + 0.3, "rudder turns the boat")
+	boat.apply("action")
+	_sail(boat, 4.0)
+	var anchored_at := boat.position
+	_sail(boat, 4.0)
+	check(boat.state == BoatModel.ANCHORED and boat.position.is_equal_approx(anchored_at),
+			"anchor: the boat stops and does not drift")
+	boat = _boat()
+	boat.heading = PI  # towards the west shore, close by
+	boat.apply("forward")
+	_sail(boat, 20.0)
+	check(boat.bumps == 1 and boat.position.x >= boat.radius - 1e-3, "stops on the shore, one bump")
+	boat = _boat()
+	boat.halt()
+	boat.apply("forward")
+	_sail(boat, 2.0)
+	check(not boat.sail_up, "no command while the decoder is lost")
+
+	var scene: Node = load("res://scenes/boat/boat.tscn").instantiate()
+	root.add_child(scene)
+	await process_frame
+	check(scene.get_node("BoatWorld").camera != null, "boat scene built in 3D")
+	scene.boat.resume()
+	scene.boat.apply("forward")
+	for i in 20:
+		scene._physics_process(0.05)
+		scene._process(0.05)
+	check(scene.boat.speed > 0.0, "boat scene sails")
 	scene.queue_free()
 	await process_frame
 

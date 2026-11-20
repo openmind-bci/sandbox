@@ -7,7 +7,7 @@ what they mean for it:
 |---|---|---|---|---|
 | Real robot / twin / mock robot | pivot in place | move forward (speeds up while held) | stop | U-turn |
 | Wheelchair | turn | move forward | stop at once | open a door (only in front of one) |
-| Boat | rudder | hoist the sail | drift | drop the anchor |
+| Boat | rudder (while held) | hoist the sail | lower the sail and drift | drop the anchor |
 | Bird | bank | flap (climb) | glide (descend) | dive / land |
 
 `action` comes from a double jaw clench of the user (a muscle signal, see
@@ -64,6 +64,20 @@ Events, with `"object": "robot-twin"`:
 | `start` | first movement | `course` |
 | `waypoint` | waypoint reached | `course`, `index` (from 0), `time_s` |
 | `finish` | last waypoint | `course`, `time_s`, `errors`, `collisions_avoided` |
+
+## Boat (Godot)
+
+A small sailing boat on a lake (`scenarios/courses/boat_lake.yaml`: islands and
+four buoys to reach in order), slow and forgiving on purpose: inertia and drift,
+no time pressure. `forward` hoists the sail (the boat speeds up slowly to 3 m/s),
+`rest` lowers it (the boat slows down slowly and the wind pushes it), `left` /
+`right` turn the rudder while held (more effect at speed), `action` drops the
+anchor (the boat stops and stays until the sail is hoisted again). The boat stops
+against the shore and the islands and counts a bump per impact.
+
+Events, with `"object": "boat"`: `telemetry` (position, heading, speed, sail,
+anchor, state), `state`, `start`, `waypoint`, `finish` (`time_s`, `errors`,
+`bumps`).
 
 ## Wheelchair (Godot)
 

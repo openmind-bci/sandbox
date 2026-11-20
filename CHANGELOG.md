@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Semi-realistic 3D scenes: robot twin (room, posts, waypoint rings, robot
+  built from `robot.yaml`), wheelchair (apartment with swinging doors and
+  furniture), calm landscape under the calibration bird, and a new **boat**
+  scene (SBX-075: inertia, drift, rudder, anchor, buoys around islands, water
+  shader). CC0 textures and skies from Poly Haven (`tools/fetch_polyhaven.py`,
+  Git LFS); camera modes on C; 2D minimaps.
+- Graphics quality menu: realistic or light (no shadows nor effects, 3D at
+  75 %, 30 fps), remembered; the project moves to the Forward+ renderer.
 - FreeSurfer fsaverage brain for the 3D panel: `tools/fetch_fsaverage.py`
   downloads it with MNE into `$OPENMIND_DATA_DIR` (never committed) and exports
   a 20,484-vertex mesh; the panel uses it when present, the schematic surface

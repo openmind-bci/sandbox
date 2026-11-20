@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://scenes/placeholder_scene.gd" id="1_scene"]
+[ext_resource type="Script" path="res://scenes/boat/boat.gd" id="1_boat"]
 [ext_resource type="Script" path="res://addons/openmind/object_controller.gd" id="2_ctrl"]
+[ext_resource type="Script" path="res://scenes/boat/boat_world.gd" id="3_world"]
+[ext_resource type="Script" path="res://scenes/boat/boat_view.gd" id="4_view"]
 
 [node name="Boat" type="Control"]
 layout_mode = 3
@@ -10,51 +12,38 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_scene")
-title = "Boat"
-mapping = "left / right: rudder · forward: hoist the sail · rest: drift · action: drop the anchor"
-task = "SBX-075"
+script = ExtResource("1_boat")
 
 [node name="ObjectController" type="Node" parent="."]
 script = ExtResource("2_ctrl")
 min_confidence = 0.7
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="BoatWorld" type="Node3D" parent="."]
+script = ExtResource("3_world")
+
+[node name="BoatView" type="Control" parent="."]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 1
+anchor_left = 1.0
 anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+offset_left = -256.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 180.0
+grow_horizontal = 0
+script = ExtResource("4_view")
 
-[node name="Box" type="VBoxContainer" parent="Center"]
-layout_mode = 2
-theme_override_constants/separation = 16
-alignment = 1
+[node name="Hud" type="VBoxContainer" parent="."]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 8.0
+offset_right = 900.0
+offset_bottom = 64.0
 
-[node name="TitleLabel" type="Label" parent="Center/Box"]
+[node name="Status" type="Label" parent="Hud"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 36
-horizontal_alignment = 1
 
-[node name="CommandLabel" type="Label" parent="Center/Box"]
+[node name="Progress" type="Label" parent="Hud"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 64
-horizontal_alignment = 1
-
-[node name="StateLabel" type="Label" parent="Center/Box"]
-unique_name_in_owner = true
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="MappingLabel" type="Label" parent="Center/Box"]
-unique_name_in_owner = true
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TaskLabel" type="Label" parent="Center/Box"]
-unique_name_in_owner = true
-layout_mode = 2
-horizontal_alignment = 1

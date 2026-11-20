@@ -38,14 +38,14 @@ Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHA
 | Keyboard command simulator and fake band power (`keys`) | available |
 | `robot.yaml` and mock robot (`mock-robot`) | available |
 | MQTT ↔ WebSocket ↔ LSL gateway (`bridge`) | available |
-| Godot cockpit: menus, panels, scene switching (`godot/`) | available (placeholder scenes) |
+| Godot cockpit: menus, panels, scene switching, semi-realistic 3D scenes (`godot/`) | available |
 | Robot twin scene: waypoint course, timer, event log | available |
 | Bird scene: guided calibration with markers to MQTT and LSL | available |
 | Wheelchair scene: apartment, doors opened with `action` | available |
 | Live 3D brain panel (sensor-level band power) | available |
 | Signal panel (EEG relayed read-only by `bridge --eeg`) | available |
 | 2D topographic check of band power (`tools/check_topomap.py`) | available |
-| Boat scene | planned |
+| Boat scene: sail around islands, anchor with `action` | available |
 | ESP32 robot firmware (built, not flashed) | available |
 | Adapter template for your own object | planned |
 

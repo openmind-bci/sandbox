@@ -37,6 +37,25 @@ OPENMIND_BRIDGE_URL=ws://127.0.0.1:8781 godot --path godot
 
 or from **Settings → Bridge address…** while it runs.
 
+## Scenes and graphics
+
+The four scenes are drawn in 3D, semi-realistic, with CC0 textures and skies from
+Poly Haven (see `ASSETS.md`); a small 2D map stays in the corner. Shared helpers
+are in `addons/openmind/world_kit.gd`.
+
+| Scene | 3D view | C (camera) |
+|---|---|---|
+| Robot twin | room with concrete floor and plaster walls, wooden posts, glowing waypoint rings, robot built from `robot.yaml` | chase, top, overview |
+| Bird | calm landscape (hills, cloudy sky, light fog); the bird stays at the centre and the landscape moves | — |
+| Wheelchair | apartment with plaster walls, laminate floor, swinging wooden doors, furniture | chase, first person, top |
+| Boat | lake with calm water, islands with trees, striped buoys, a boat whose sail rises and falls | chase, top |
+
+**Settings → Graphics** switches between *realistic* (shadows, ambient
+occlusion, glow, 60 fps) and *light* (no shadows nor effects, 3D at 75 % of the
+resolution, 30 fps), for when the decoder trains on the same machine. The choice
+is remembered. The project uses the Forward+ renderer (`godot --rendering-method
+gl_compatibility` runs it on older GPUs, with simpler lighting).
+
 ## Panels
 
 | Panel | Content |
