@@ -35,6 +35,7 @@ func _run() -> void:
 	test_twin_full_course()
 	test_calibration_protocol()
 	await test_bird_scene()
+	test_chair()
 	await test_cockpit()
 
 	print("%d checks, %d failed" % [_checks, _failures])
@@ -366,6 +367,48 @@ func test_bird_scene() -> void:
 			"session, trial and block markers are all emitted")
 	scene.queue_free()
 	await process_frame
+
+
+const APARTMENT := "res://data/apartments/apartment_default.json"
+## Plan for the default apartment, also in examples/keys-wheelchair.yaml.
+const CHAIR_PLAN := [["rest", 1.0], ["forward", 7.0], ["rest", 0.5], ["action", 0.5],
+	["forward", 5.0], ["left", 2.0], ["forward", 3.0], ["rest", 1.0]]
+
+
+func test_chair() -> void:
+	var chair := ChairModel.from_file(APARTMENT)
+	check(chair != null and chair.doors.size() == 1, "apartment loads")
+	chair.apply("forward")
+	chair.step(0.1)
+	check(chair.state == ChairModel.SAFETY_STOP and chair.speed == 0.0,
+			"no motion before the decoder is alive")
+	chair.resume()
+	check(chair.apply("action") == "", "action far from a door does nothing")
+	chair.apply("forward")
+	for i in 600:
+		chair.step(0.02)
+	check(chair.state == ChairModel.SAFETY_STOP and chair.reason == "obstacle",
+			"closed door stops the chair")
+	check(absf(chair.clearance - chair.stop_margin) < 0.01, "stops at the margin")
+	check(chair.apply("action") == "bedroom", "action in front of the door opens it")
+	chair.apply("forward")
+	chair.step(0.5)
+	check(chair.state == ChairModel.MOVING, "drives through the open door")
+	chair.apply("rest")
+	check(chair.speed == 0.0 and chair.command == "rest", "rest stops at once")
+
+	chair = ChairModel.from_file(APARTMENT)
+	chair.resume()
+	var course := TwinCourse.new()
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(APARTMENT))
+	for w in data["waypoints"]:
+		course.waypoints.append(Vector3(w["x"], w["y"], w["radius"]))
+	for step in CHAIR_PLAN:
+		chair.apply(step[0])
+		for i in roundi(step[1] / 0.02):
+			chair.step(0.02)
+			course.update(chair.position, chair.state == ChairModel.MOVING, 0.02)
+	check(course.finished, "the keyboard plan completes the apartment course")
 
 
 func test_theme() -> void:

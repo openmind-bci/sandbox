@@ -75,3 +75,14 @@ def test_example_keys_script_completes_the_default_course_with_the_mock_robot() 
                 if math.hypot(robot.pose.x - target.x, robot.pose.y - target.y) <= target.radius:
                     reached += 1
     assert reached == len(course.waypoints)
+
+
+@pytest.mark.parametrize(
+    "path", sorted((ROOT / "scenarios" / "apartments").glob("*.yaml")), ids=lambda p: p.stem
+)
+def test_apartments_are_valid(path: Path) -> None:
+    from openmind_sandbox.apartment import Apartment
+
+    apartment = Apartment.load(path)
+    assert apartment.name == path.stem
+    assert apartment.doors

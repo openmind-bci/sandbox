@@ -58,6 +58,29 @@ Events, with `"object": "robot-twin"`:
 | `waypoint` | waypoint reached | `course`, `index` (from 0), `time_s` |
 | `finish` | last waypoint | `course`, `time_s`, `errors`, `collisions_avoided` |
 
+## Wheelchair (Godot)
+
+A virtual wheelchair in an apartment seen from above
+(`scenarios/apartments/apartment_default.yaml`, exported by `export-godot`):
+living room, a closed door, a bedroom. Confidence threshold 0.8.
+
+| Command | Effect |
+|---|---|
+| `left` / `right` | turn in place (45°/s) |
+| `forward` | drive, speeding up to 0.5 m/s |
+| `rest` | **stop at once** |
+| `action` | open the closed door in front (within 0.9 m and 40° of the heading); ignored elsewhere |
+
+The chair never gets closer than 0.25 m to a wall or a closed door (three
+parallel rays look ahead of its footprint). The run through the waypoints
+(living room, bedroom, bedside) is timed; `R` restarts.
+`examples/keys-wheelchair.yaml` completes it with `openmind-sandbox keys --script`.
+
+Events, with `"object": "wheelchair"`: `telemetry` (position, heading, speed,
+`clearance_m`, state), `state`, `start`, `waypoint`, `door_opened` (`door`),
+`action_ignored`, `finish` (`time_s`, `errors`, `collisions_avoided`,
+`ignored_actions`).
+
 ## Mock robot
 
 ```bash

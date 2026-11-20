@@ -126,8 +126,11 @@ def test_every_simulated_message_conforms_to_the_protocol() -> None:
 # --- Scripts -------------------------------------------------------------------
 
 
-def test_example_script_is_valid() -> None:
-    script = Script.load(EXAMPLE_SCRIPT)
+@pytest.mark.parametrize(
+    "path", sorted(EXAMPLE_SCRIPT.parent.glob("keys-*.yaml")), ids=lambda p: p.stem
+)
+def test_example_scripts_are_valid(path: Path) -> None:
+    script = Script.load(path)
     assert script.duration > 0
     assert script.user == "P00"
 

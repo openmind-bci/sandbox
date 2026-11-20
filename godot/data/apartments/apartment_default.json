@@ -1,0 +1,73 @@
+{
+  "_generated": "by `openmind-sandbox export-godot`; do not edit",
+  "name": "apartment_default",
+  "title": "Living room to bedroom",
+  "size": {
+    "width": 6.0,
+    "height": 4.0
+  },
+  "start": {
+    "x": 0.8,
+    "y": 2.1,
+    "heading_deg": 0.0
+  },
+  "chair": {
+    "radius_m": 0.35,
+    "max_speed_mps": 0.5,
+    "acceleration_mps2": 0.3,
+    "turn_speed_dps": 45.0,
+    "stop_margin_m": 0.25,
+    "door_reach_m": 0.9,
+    "door_angle_deg": 40.0,
+    "min_confidence": 0.8
+  },
+  "walls": [
+    {
+      "x1": 3.5,
+      "y1": 0.0,
+      "x2": 3.5,
+      "y2": 1.6
+    },
+    {
+      "x1": 3.5,
+      "y1": 2.6,
+      "x2": 3.5,
+      "y2": 4.0
+    },
+    {
+      "x1": 0.0,
+      "y1": 3.2,
+      "x2": 1.4,
+      "y2": 3.2
+    }
+  ],
+  "doors": [
+    {
+      "x1": 3.5,
+      "y1": 1.6,
+      "x2": 3.5,
+      "y2": 2.6,
+      "id": "bedroom"
+    }
+  ],
+  "waypoints": [
+    {
+      "name": "living room",
+      "x": 2.4,
+      "y": 2.1,
+      "radius": 0.3
+    },
+    {
+      "name": "bedroom",
+      "x": 5.0,
+      "y": 2.1,
+      "radius": 0.35
+    },
+    {
+      "name": "bedside",
+      "x": 5.0,
+      "y": 3.2,
+      "radius": 0.35
+    }
+  ]
+}

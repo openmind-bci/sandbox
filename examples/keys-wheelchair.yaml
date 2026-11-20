@@ -1,0 +1,14 @@
+# Complete run of the default apartment (scenarios/apartments/apartment_default.yaml),
+# with the cockpit on the wheelchair scene:
+#   openmind-sandbox keys --script examples/keys-wheelchair.yaml
+# The same plan is replayed by godot/tests/run_tests.gd.
+user: P00
+steps:
+  - {command: rest, duration: 1}
+  - {command: forward, duration: 7}     # living room, then stops before the closed door
+  - {command: rest, duration: 0.5}
+  - {command: action, duration: 0.5}    # opens the bedroom door
+  - {command: forward, duration: 5}     # bedroom
+  - {command: left, duration: 2}        # 90° at 45°/s
+  - {command: forward, duration: 3}     # bedside
+  - {command: rest, duration: 1}

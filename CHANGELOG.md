@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Wheelchair scene: apartment from `scenarios/apartments/` (validated,
+  exported for Godot), turn in place, drive, stop at once on `rest`, `action`
+  opens the closed door in front and is ignored elsewhere, stop margin before
+  walls and doors, timed waypoints, events on `openmind/v1/events`
+  (`wheelchair`). `examples/keys-wheelchair.yaml` completes the default run.
 - Bird scene: guided motor imagery calibration from
   `scenarios/calibration_default.yaml` (fixation 2 s, cue 1 s, imagery 4 s,
   random rest 1.5-3 s, balanced shuffled classes, blocks of about 6 min),
