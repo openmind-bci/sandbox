@@ -391,6 +391,11 @@ func test_bird_scene() -> void:
 	# No bridge socket in tests: every marker is counted as not sent.
 	check(scene.markers_failed == 2 + 3 * scene.protocol.total_trials() + 4,
 			"session, trial and block markers are all emitted")
+	var bird_world: BirdWorld = scene.get_node("BirdWorld")
+	check(bird_world.camera != null and not scene.get_node("BirdView").draw_scenery,
+			"bird drawn in 3D, texts on top")
+	check(is_equal_approx(BirdWorld.height(10.0, 20.0), BirdWorld.height(10.0 + BirdWorld.TILE,
+			20.0 - BirdWorld.TILE)), "terrain repeats seamlessly")
 	scene.set_manual_stage("thought")
 	check(scene.stage["id"] == "thought", "stage forced from the menu")
 	scene.set_manual_stage("")

@@ -23,6 +23,9 @@ var bank := 0.0
 var flap := 0.0
 var flapping := false
 var instruction := ""
+## False when a 3D landscape (BirdWorld) is drawn underneath: only the cross,
+## the cue and the texts are drawn, on translucent bands.
+var draw_scenery := true
 var footer := ""
 var banner := ""
 
@@ -37,11 +40,16 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var centre := size / 2.0
-	_draw_sky()
-	_draw_hills(HILLS_FAR, 0.35, 0.72, 140.0, 0.6)
-	_draw_hills(HILLS, 0.8, 0.82, 90.0, 1.0)
-	_draw_clouds()
-	_draw_bird(centre)
+	if draw_scenery:
+		_draw_sky()
+		_draw_hills(HILLS_FAR, 0.35, 0.72, 140.0, 0.6)
+		_draw_hills(HILLS, 0.8, 0.82, 90.0, 1.0)
+		_draw_clouds()
+		_draw_bird(centre)
+	else:
+		var band := Color(OpenMindTheme.BACKGROUND, 0.55)
+		draw_rect(Rect2(0, 0, size.x, 56), band)
+		draw_rect(Rect2(0, size.y - 52, size.x, 52), band)
 	var font := get_theme_default_font()
 	if not instruction.is_empty():
 		draw_string(font, Vector2(24, 40), instruction, HORIZONTAL_ALIGNMENT_LEFT,

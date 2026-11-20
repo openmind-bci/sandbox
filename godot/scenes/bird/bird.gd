@@ -36,6 +36,7 @@ var _score_text := ""
 var _openmind: Node = null
 
 @onready var _view: BirdView = $BirdView
+@onready var _world: BirdWorld = $BirdWorld
 @onready var _start: Button = %StartButton
 @onready var _controller: ObjectController = $ObjectController
 @onready var _stage_choice: OptionButton = %StageChoice
@@ -44,6 +45,8 @@ var _openmind: Node = null
 func _ready() -> void:
 	_openmind = get_node_or_null("/root/OpenMind")
 	protocol = CalibrationProtocol.from_file(protocol_path)
+	_world.setup()
+	_view.draw_scenery = false
 	_controller.command_accepted.connect(_on_command)
 	if _openmind != null:
 		_openmind.score_received.connect(_on_score)
@@ -82,11 +85,16 @@ func _process(delta: float) -> void:
 	if running:
 		_handle(protocol.advance(delta))
 	_animate(delta)
+	_world.update(_view.scroll, _view.bank, _view.flap, delta)
 	if _banner_left > 0.0:
 		_banner_left -= delta
 		if _banner_left <= 0.0:
 			_view.banner = ""
 	_refresh_texts()
+
+
+func apply_quality(quality: String) -> void:
+	_world.apply_quality(quality)
 
 
 func _unhandled_key_input(event: InputEvent) -> void:

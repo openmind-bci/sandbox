@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scenes/bird/bird.gd" id="1_bird"]
 [ext_resource type="Script" path="res://scenes/bird/bird_view.gd" id="2_view"]
 [ext_resource type="Script" path="res://addons/openmind/object_controller.gd" id="3_ctrl"]
+[ext_resource type="Script" path="res://scenes/bird/bird_world.gd" id="4_world"]
 
 [node name="Bird" type="Control"]
 layout_mode = 3
@@ -17,6 +18,9 @@ script = ExtResource("1_bird")
 script = ExtResource("3_ctrl")
 min_confidence = 0.6
 virtual_scene = true
+
+[node name="BirdWorld" type="Node3D" parent="."]
+script = ExtResource("4_world")
 
 [node name="BirdView" type="Control" parent="."]
 layout_mode = 1
