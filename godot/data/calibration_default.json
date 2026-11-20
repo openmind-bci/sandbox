@@ -1,0 +1,48 @@
+{
+  "_generated": "by `openmind-sandbox export-godot`; do not edit",
+  "name": "calibration_default",
+  "title": "Guided calibration: left, right, forward, rest",
+  "classes": [
+    "left",
+    "right",
+    "forward",
+    "rest"
+  ],
+  "trials_per_class": 10,
+  "blocks": 3,
+  "seed": null,
+  "timing": {
+    "fixation_s": 2.0,
+    "cue_s": 1.0,
+    "imagery_s": 4.0,
+    "rest_min_s": 1.5,
+    "rest_max_s": 3.0,
+    "break_s": 30.0
+  },
+  "stages": [
+    {
+      "id": "discovery",
+      "title": "Discovery",
+      "max_assistance": 1.0,
+      "instruction": "Make the movement for real, gently: the bird follows you."
+    },
+    {
+      "id": "transition",
+      "title": "Transition",
+      "max_assistance": 0.66,
+      "instruction": "Start the movement, then only imagine it."
+    },
+    {
+      "id": "thought",
+      "title": "Thought",
+      "max_assistance": 0.33,
+      "instruction": "Only imagine the movement, without moving."
+    }
+  ],
+  "cue_text": {
+    "left": "Left hand",
+    "right": "Right hand",
+    "forward": "Both feet",
+    "rest": "Rest"
+  }
+}

@@ -13,6 +13,7 @@ from openmind_protocol import Command, Message, ProtocolError, Status, decode_to
 
 import openmind_sandbox
 from openmind_sandbox import keyboard
+from openmind_sandbox.calibration import Calibration
 from openmind_sandbox.config import RobotConfig
 from openmind_sandbox.course import Course, export_godot_data
 from openmind_sandbox.keyboard_sim import (
@@ -320,6 +321,9 @@ def export_godot(
     try:
         for path in export_godot_data(root):
             typer.echo(f"wrote {path}")
+        for source in sorted((root / "scenarios").glob("calibration_*.yaml")):
+            for warning in Calibration.load(source).check_block_duration():
+                typer.echo(f"warning: {warning}", err=True)
     except (OSError, ValueError) as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(2) from error

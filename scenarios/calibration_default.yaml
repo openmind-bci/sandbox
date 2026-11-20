@@ -1,0 +1,40 @@
+# Guided calibration protocol of the bird scene (motor imagery).
+# One trial: fixation cross -> cue -> imagery -> rest (random duration).
+# Classes are balanced and shuffled in each block; a block lasts 5 to 7 minutes.
+# Labels are protocol commands: they are the `label` of the `cue` markers that
+# OpenMind Core uses to cut labelled epochs (CORE-090).
+name: calibration_default
+title: "Guided calibration: left, right, forward, rest"
+classes: [left, right, forward, rest]
+trials_per_class: 10          # per block: 40 trials, about 6 min
+blocks: 3
+seed: null                    # null: a new order each session; an integer: reproducible
+timing:
+  fixation_s: 2.0
+  cue_s: 1.0
+  imagery_s: 4.0
+  rest_min_s: 1.5
+  rest_max_s: 3.0
+  break_s: 30.0               # pause between blocks (the user may continue earlier)
+
+# What the user is asked to do, per stage. The stage follows the assistance that
+# the decoder announces in `status` (1 = fully assisted), or the block number
+# when the decoder sends none.
+stages:
+  - id: discovery
+    title: "Discovery"
+    max_assistance: 1.0
+    instruction: "Make the movement for real, gently: the bird follows you."
+  - id: transition
+    title: "Transition"
+    max_assistance: 0.66
+    instruction: "Start the movement, then only imagine it."
+  - id: thought
+    title: "Thought"
+    max_assistance: 0.33
+    instruction: "Only imagine the movement, without moving."
+cue_text:
+  left: "Left hand"
+  right: "Right hand"
+  forward: "Both feet"
+  rest: "Rest"

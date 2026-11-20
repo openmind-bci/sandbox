@@ -33,6 +33,8 @@ func _run() -> void:
 	test_twin_robot()
 	test_twin_course()
 	test_twin_full_course()
+	test_calibration_protocol()
+	await test_bird_scene()
 	await test_cockpit()
 
 	print("%d checks, %d failed" % [_checks, _failures])
@@ -251,6 +253,119 @@ func test_twin_full_course() -> void:
 			course.update(robot.position, robot.state == TwinRobot.MOVING, 0.02)
 	check(course.finished, "the keyboard plan completes the default course in the twin")
 	check(robot.collisions_avoided == 0, "the plan avoids every obstacle")
+
+
+const QUICK_PROTOCOL := "res://tests/data/calibration_quick.json"
+
+
+func _play(protocol: CalibrationProtocol, dt: float = 0.01) -> Array:
+	## Returns [time, type, label, trial] for every marker of a whole session.
+	var markers: Array = []
+	var t := 0.0
+	for e in protocol.start():
+		if e[0] == "marker":
+			markers.append([t, e[1], e[2], e[3]])
+	while protocol.phase != CalibrationProtocol.FINISHED and t < 600.0:
+		t += dt
+		for e in protocol.advance(dt):
+			if e[0] == "marker":
+				markers.append([t, e[1], e[2], e[3]])
+		if protocol.phase == CalibrationProtocol.BREAK and t > 100.0:
+			protocol.skip_break()
+	return markers
+
+
+func test_calibration_protocol() -> void:
+	var protocol := CalibrationProtocol.from_file("res://data/calibration_default.json")
+	check(protocol != null and protocol.total_trials() == 120, "default: 3 blocks of 40 trials")
+	var t := protocol.timing
+	check(t["fixation_s"] == 2.0 and t["cue_s"] == 1.0 and t["imagery_s"] == 4.0,
+			"default timing 2 / 1 / 4 s")
+
+	protocol = CalibrationProtocol.from_file(QUICK_PROTOCOL)
+	var markers := _play(protocol)
+	var cues := markers.filter(func(m: Array) -> bool: return m[1] == "cue")
+	check(cues.size() == protocol.total_trials(), "one cue per trial")
+	for b in 2:
+		var labels := cues.slice(b * 4, b * 4 + 4).map(func(m: Array) -> String: return m[2])
+		labels.sort()
+		check(labels == ["forward", "left", "rest", "right"], "balanced classes in block %d" % (b + 1))
+	var ordered := true
+	var timing_ok := true
+	for n in range(1, protocol.total_trials() + 1):
+		var of_trial := markers.filter(func(m: Array) -> bool: return m[3] == n)
+		var kinds := of_trial.map(func(m: Array) -> String: return m[1])
+		ordered = ordered and kinds == ["trial_start", "cue", "trial_end"]
+		if of_trial.size() == 3:
+			timing_ok = timing_ok and absf(of_trial[1][0] - of_trial[0][0] - 0.2) < 0.02 \
+					and absf(of_trial[2][0] - of_trial[1][0] - 0.5) < 0.02
+			ordered = ordered and of_trial[0][2] == of_trial[1][2] and of_trial[1][2] == of_trial[2][2]
+	check(ordered, "trial_start, cue, trial_end with the same label for every trial")
+	check(timing_ok, "cue after fixation, trial_end after cue + imagery")
+	var rests_ok := true
+	for n in range(1, protocol.trials_per_block()):
+		var end_n: Array = markers.filter(func(m: Array) -> bool:
+				return m[1] == "trial_end" and m[3] == n)[0]
+		var next_start: Array = markers.filter(func(m: Array) -> bool:
+				return m[1] == "trial_start" and m[3] == n + 1)[0]
+		var gap: float = next_start[0] - end_n[0]
+		rests_ok = rests_ok and gap >= 0.15 - 0.02 and gap <= 0.3 + 0.02
+	check(rests_ok, "random rest within its range")
+	var events := markers.filter(func(m: Array) -> bool: return m[1] == "event").map(
+			func(m: Array) -> String: return m[2])
+	check(events == ["block_1_start", "block_1_end", "block_2_start", "block_2_end"],
+			"block markers")
+
+	var again := _play(CalibrationProtocol.from_file(QUICK_PROTOCOL))
+	check(again.map(func(m: Array) -> String: return m[2]) == markers.map(
+			func(m: Array) -> String: return m[2]), "a seed makes the order reproducible")
+
+	check(protocol.stage_for(0.9)["id"] == "discovery", "assistance 0.9 -> discovery")
+	check(protocol.stage_for(0.5)["id"] == "transition", "assistance 0.5 -> transition")
+	check(protocol.stage_for(0.1)["id"] == "thought", "assistance 0.1 -> thought")
+	protocol.block = 2
+	check(protocol.stage_for(-1.0)["id"] == "transition", "no assistance: stage of the block")
+
+	protocol = CalibrationProtocol.from_file(QUICK_PROTOCOL)
+	protocol.start()
+	protocol.advance(0.25)  # in the cue
+	var stopped := protocol.stop()
+	check(stopped[0][1] == "trial_end" and protocol.phase == CalibrationProtocol.FINISHED,
+			"stopping closes the current trial")
+
+
+func test_bird_scene() -> void:
+	var scene: Node = load("res://scenes/bird/bird.tscn").instantiate()
+	scene.protocol_path = QUICK_PROTOCOL
+	root.add_child(scene)
+	await process_frame
+	_go_live()
+	_status("calibrating")
+	check(_om.feedback_alive() and not _om.decoder_alive,
+			"calibrating decoder gives feedback but drives no real object")
+	scene.start_session()
+	check(scene.running, "session starts")
+	var seq := 100
+	var matched := false
+	while scene.running and seq < 2000:
+		_now += 0.05
+		_status("calibrating")
+		if scene.protocol.phase == CalibrationProtocol.IMAGERY:
+			_command(scene.protocol.label, 0.9, seq)  # a perfect user
+		seq += 1
+		scene._process(0.05)
+		if scene.protocol.phase == CalibrationProtocol.BREAK:
+			scene._handle(scene.protocol.skip_break())
+		if scene.last_match > 0.9:
+			matched = true
+	check(not scene.running and scene.protocol.phase == CalibrationProtocol.FINISHED,
+			"session runs to the end")
+	check(matched, "matching commands are measured")
+	# No bridge socket in tests: every marker is counted as not sent.
+	check(scene.markers_failed == 2 + 3 * scene.protocol.total_trials() + 4,
+			"session, trial and block markers are all emitted")
+	scene.queue_free()
+	await process_frame
 
 
 func test_theme() -> void:

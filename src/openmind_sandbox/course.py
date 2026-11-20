@@ -1,8 +1,9 @@
 """Courses: arena, obstacles and waypoints shared by the robot twin and the mock robot.
 
 Courses are YAML files in ``scenarios/courses/``. Godot has no YAML parser, so
-:func:`export_godot_data` writes JSON copies of the courses and of ``robot.yaml``
-into ``godot/data/`` (``openmind-sandbox export-godot``); a test checks that the
+:func:`export_godot_data` writes JSON copies of the courses, of the calibration
+protocols (``scenarios/calibration_*.yaml``) and of ``robot.yaml`` into
+``godot/data/`` (``openmind-sandbox export-godot``); a test checks that the
 committed copies are up to date.
 """
 
@@ -16,6 +17,7 @@ from typing import Annotated
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from openmind_sandbox.calibration import Calibration
 from openmind_sandbox.config import RobotConfig
 from openmind_sandbox.mock_robot import Obstacle, Pose, World
 
@@ -120,6 +122,9 @@ def godot_data(root: Path) -> dict[str, str]:
     for source in sorted((root / "scenarios" / "courses").glob("*.yaml")):
         course = Course.load(source)
         expected[f"godot/data/courses/{course.name}.json"] = _dumps(course.model_dump(mode="json"))
+    for source in sorted((root / "scenarios").glob("calibration_*.yaml")):
+        protocol = Calibration.load(source)
+        expected[f"godot/data/{protocol.name}.json"] = _dumps(protocol.model_dump(mode="json"))
     return expected
 
 

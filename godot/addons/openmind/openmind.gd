@@ -172,6 +172,23 @@ func compute_alive() -> bool:
 	return clock.call() - _last_status_at < STATUS_TIMEOUT_S
 
 
+## Whether the decoder is fresh enough to give feedback in a virtual scene:
+## like [method compute_alive], but a `calibrating` decoder also counts. Never use
+## it for scenes that mirror a real object.
+func feedback_alive() -> bool:
+	if not connected or not mqtt_connected:
+		return false
+	if last_status.get("state", "") not in ["running", "calibrating"]:
+		return false
+	return clock.call() - _last_status_at < STATUS_TIMEOUT_S
+
+
+## Assistance announced by the decoder (0-1), or -1 when it sends none.
+func assistance() -> float:
+	var value: Variant = last_status.get("assistance")
+	return float(value) if value != null else -1.0
+
+
 ## Force the connection flag (tests only).
 func set_connected_for_test(value: bool) -> void:
 	_set_connected(value)

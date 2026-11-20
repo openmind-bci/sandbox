@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Bird scene: guided motor imagery calibration from
+  `scenarios/calibration_default.yaml` (fixation 2 s, cue 1 s, imagery 4 s,
+  random rest 1.5-3 s, balanced shuffled classes, blocks of about 6 min),
+  markers `trial_start` / `cue` / `trial_end` and block events through the
+  bridge to MQTT and LSL, bird centred while the scenery moves, assistance and
+  stages (discovery, transition, thought), match share and score display.
+  See `docs/calibration.md`.
+- `OpenMind.feedback_alive()` (a `calibrating` decoder also counts, for virtual
+  scenes only) and `OpenMind.assistance()`.
 - Robot twin scene in the cockpit: robot of `robot.yaml` on a waypoint course,
   same kinematics, state machine and obstacle stop as the mock robot, timer,
   errors and collisions avoided, events on `openmind/v1/events`
