@@ -1,0 +1,48 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+secrets.h
+
+# EEG data and model weights (never committed, see OPENMIND_DATA_DIR)
+*.fif
+*.xdf
+*.edf
+*.bdf
+*.gdf
+*.npz
+*.pt
+
+# Godot
+.godot/
+*.import.tmp
+
+# PlatformIO
+.pio/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store

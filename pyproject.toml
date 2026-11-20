@@ -1,0 +1,108 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openmind-sandbox"
+version = "0.1.0.dev0"
+description = "Virtual and real objects driven by OpenMind BCI commands: simulators, mock robot, gateway."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "OpenMind BCI contributors" }]
+requires-python = ">=3.11"
+keywords = ["bci", "brain-computer-interface", "mqtt", "robot", "simulation", "godot"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+dependencies = [
+    "openmind-protocol>=1.0.1.dev0,<2",
+    "paho-mqtt>=2.1",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+]
+
+[project.scripts]
+openmind-sandbox = "openmind_sandbox.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/openmind-bci/sandbox"
+Repository = "https://github.com/openmind-bci/sandbox"
+Issues = "https://github.com/openmind-bci/sandbox/issues"
+Changelog = "https://github.com/openmind-bci/sandbox/blob/main/CHANGELOG.md"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.11",
+    "pre-commit>=3.8",
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "types-pyyaml>=6.0",
+]
+
+# openmind-protocol is not on PyPI yet: take it from the core repository.
+# For local work on the protocol, see CONTRIBUTING.md (editable install).
+[tool.uv.sources]
+openmind-protocol = { git = "https://github.com/openmind-bci/core.git", subdirectory = "protocol" }
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/openmind_sandbox"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/", "tests/", "config/", "scenarios/", "README.md", "LICENSE", "CHANGELOG.md"]
+
+# --- Lint & format ---------------------------------------------------------
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # pycodestyle
+    "F",       # pyflakes
+    "I",       # isort
+    "N",       # pep8-naming
+    "UP",      # pyupgrade
+    "B",       # bugbear
+    "SIM",     # simplify
+    "RUF",     # ruff-specific rules
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["openmind_sandbox"]
+
+# --- Typing ----------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+warn_unreachable = true
+
+# --- Tests -----------------------------------------------------------------
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "broker: needs a live MQTT broker on localhost:1883 (skipped when none is reachable)",
+]
+
+[tool.coverage.run]
+source = ["openmind_sandbox"]
+branch = true

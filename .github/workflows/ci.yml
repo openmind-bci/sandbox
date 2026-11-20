@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run mypy
+
+  test:
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: uv sync --locked
+      - run: uv run pytest --cov --cov-report=term-missing
+
+  test-broker:
+    name: Tests with a live MQTT broker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+      - name: Start Mosquitto
+        run: |
+          docker compose -f dev/docker-compose.yml up -d
+          for _ in $(seq 1 30); do nc -z localhost 1883 && exit 0; sleep 1; done
+          exit 1
+      - run: uv sync --locked
+      - run: uv run pytest -m broker
+        env:
+          OPENMIND_REQUIRE_BROKER: "1"
+      - if: always()
+        run: docker compose -f dev/docker-compose.yml down
+
+  # The firmware and the Godot project are added by later tasks; these jobs
+  # run as soon as their project files exist.
+  firmware:
+    name: Firmware (PlatformIO)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check for the firmware project
+        id: project
+        run: |
+          if [ -f firmware/esp32-robot/platformio.ini ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No firmware project yet, skipping."
+          fi
+      - if: steps.project.outputs.present == 'true'
+        uses: astral-sh/setup-uv@v7
+      - if: steps.project.outputs.present == 'true'
+        run: uvx --from platformio pio run -d firmware/esp32-robot
+      - if: steps.project.outputs.present == 'true'
+        run: uvx --from platformio pio test -d firmware/esp32-robot -e native
+
+  godot:
+    name: Godot import (headless)
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: "4.5.1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+      - name: Check for the Godot project
+        id: project
+        run: |
+          if [ -f godot/project.godot ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No Godot project yet, skipping."
+          fi
+      - name: Install Godot
+        if: steps.project.outputs.present == 'true'
+        run: |
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -sSL -o godot.zip "$url"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot-bin
+      - name: Import the project
+        if: steps.project.outputs.present == 'true'
+        run: ./godot-bin --headless --path godot --import
+
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v7
+      - run: uv build
