@@ -10,5 +10,8 @@ Heavy binary files (`*.glb`, `*.png`, `*.wav`, `*.ogg`) are stored with Git LFS.
 |---|---|---|---|
 | `godot/addons/openmind/fonts/SpaceGrotesk.ttf` | Florian Karsten, [Space Grotesk](https://github.com/floriankarsten/space-grotesk) (via Google Fonts) | SIL Open Font License 1.1 (`fonts/OFL.txt`) | variable font |
 
+The brain surface of the 3D panel is generated in code (`godot/panels/brain/brain_mesh.gd`):
+an original schematic shape, not an asset.
+
 Assets that cannot be redistributed (for example the FreeSurfer `fsaverage`
 cortex mesh) are **downloaded by a script** and never committed.

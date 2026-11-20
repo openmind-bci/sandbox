@@ -25,11 +25,19 @@ func _run() -> void:
 	var applied := {}
 	om.command_received.connect(func(c: Dictionary) -> void: seen[c["command"]] = true)
 	var start := Time.get_ticks_msec()
+	var lowest := {"C4": 0.0}  # a dictionary: lambdas capture locals by value
+	var brain: BrainPanel = main.brain_panel
+	om.command_received.connect(func(c: Dictionary) -> void:
+			if c["command"] == "left" and brain.values.get("C4") != null:
+				lowest["C4"] = minf(lowest["C4"], float(brain.values["C4"])))
 	while (Time.get_ticks_msec() - start) / 1000.0 < TIMEOUT_S:
 		await process_frame
 		applied[main.current_scene.last_command] = true
-		if seen.has("forward") and seen.has("left") and applied.has("forward"):
+		var brain_ok: bool = brain.messages == 0 or float(lowest["C4"]) < -0.2
+		if seen.has("forward") and seen.has("left") and applied.has("forward") and brain_ok:
 			break
+	print("brain messages=%d lowest C4 rel_mu during left=%.2f" % [brain.messages,
+		lowest["C4"]])
 	print("connected=%s mqtt=%s alive=%s seen=%s applied=%s panel=%s" % [
 		om.connected, om.mqtt_connected, om.decoder_alive, seen.keys(), applied.keys(),
 		main.command_panel.command_label.text])

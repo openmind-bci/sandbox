@@ -33,6 +33,7 @@ var current_scene: Node = null
 var viewport: SubViewport
 var panels: Control
 var command_panel: CommandPanel
+var brain_panel: BrainPanel
 var connection_panel: ConnectionPanel
 var score_panel: ScorePanel
 
@@ -124,8 +125,9 @@ func _build_layout() -> void:
 	connection_panel.name = "ConnectionPanel"
 	score_panel = ScorePanel.new()
 	score_panel.name = "ScorePanel"
-	column.add_child(_fold("3D brain", PlaceholderPanel.new(
-			"Live activity at the sensors, from band power messages (SBX-065).")))
+	brain_panel = BrainPanel.new()
+	brain_panel.name = "BrainPanel"
+	column.add_child(_fold("3D brain", brain_panel))
 	column.add_child(_fold("Signal", PlaceholderPanel.new(
 			"Scrolling EEG channels (SBX-066).")))
 	column.add_child(_fold("Command", command_panel))

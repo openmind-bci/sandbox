@@ -36,6 +36,7 @@ func _run() -> void:
 	test_calibration_protocol()
 	await test_bird_scene()
 	test_chair()
+	await test_brain()
 	await test_cockpit()
 
 	print("%d checks, %d failed" % [_checks, _failures])
@@ -409,6 +410,66 @@ func test_chair() -> void:
 			chair.step(0.02)
 			course.update(chair.position, chair.state == ChairModel.MOVING, 0.02)
 	check(course.finished, "the keyboard plan completes the apartment course")
+
+
+func _bandpower(rel: Dictionary, bad: Array = []) -> Dictionary:
+	var channels: Array = []
+	for label in ["FC3", "FC4", "C3", "Cz", "C4", "CP3", "CP4", "CPz"]:
+		var ok: bool = label not in bad
+		var v: Variant = rel.get(label, 0.0) if ok else null
+		channels.append({"label": label, "alpha": 1.0, "mu": 1.0, "beta": 1.0,
+			"rel_mu": v, "rel_beta": v, "ok": ok})
+	return {"v": 1, "ts": 1.0, "user": "P00", "srate_hz": 250,
+		"bands": {"mu": [8, 13]}, "channels": channels}
+
+
+func _nearest_vertex(mesh: BrainMesh, p: Vector3) -> int:
+	var best := 0
+	for i in mesh.vertices.size():
+		if mesh.vertices[i].distance_to(p) < mesh.vertices[best].distance_to(p):
+			best = i
+	return best
+
+
+func test_brain() -> void:
+	var mesh := BrainMesh.new()
+	check(mesh.vertices.size() > 3000 and mesh.indices.size() % 3 == 0, "brain mesh built")
+	var colors := BrainColors.new()
+	var c4 := Vector3(0.06712, -0.0109, 0.06358)
+	var c3 := Vector3(-0.06536, -0.01163, 0.06436)
+	colors.prepare(mesh.vertices, {"C3": c3, "C4": c4})
+	var painted := colors.colorize({"C3": 0.0, "C4": -0.5})
+	var under_c4 := painted[_nearest_vertex(mesh, mesh.project(c4))]
+	var under_c3 := painted[_nearest_vertex(mesh, mesh.project(c3))]
+	check(under_c4.b > under_c4.r + 0.2, "desynchronization on C4 is blue")
+	check(under_c3.is_equal_approx(BrainColors.ZERO) or absf(under_c3.r - under_c3.b) < 0.1,
+			"C3 at baseline stays neutral")
+	painted = colors.colorize({"C3": 0.4, "C4": null})
+	under_c4 = painted[_nearest_vertex(mesh, mesh.project(c4))]
+	check(absf(under_c4.r - under_c4.g) < 0.06 and absf(under_c4.g - under_c4.b) < 0.06,
+			"electrode not OK is grey")
+	under_c3 = painted[_nearest_vertex(mesh, mesh.project(c3))]
+	check(under_c3.r > under_c3.b + 0.2, "increase on C3 is orange")
+	var back := painted[_nearest_vertex(mesh, Vector3(0, -0.09, 0.0))]
+	check(back.is_equal_approx(BrainColors.BASE), "far from electrodes: base colour")
+
+	var panel := BrainPanel.new()
+	root.add_child(panel)
+	await process_frame
+	check(panel.positions.size() >= 70, "10-10 positions loaded")
+	panel.show_bandpower(_bandpower({"C4": -0.45}, ["CPz"]))
+	check(panel.values["C4"] == -0.45 or panel.targets["C4"] == -0.45, "C4 value received")
+	check(panel.values["CPz"] == null, "CPz not OK")
+	panel.show_bandpower(_bandpower({"C3": -0.45}))
+	for i in 30:
+		panel._process(0.05)
+	check(float(panel.values["C3"]) < -0.4 and float(panel.values["C4"]) > -0.05,
+			"values move smoothly to the new message")
+	panel.set_view("Left")
+	panel.set_band("rel_beta")
+	check(panel.band == "rel_beta" and panel.values.is_empty(), "band switch resets")
+	panel.queue_free()
+	await process_frame
 
 
 func test_theme() -> void:

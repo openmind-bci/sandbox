@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Live 3D brain panel: band power messages coloured at the sensors on a
+  procedural brain surface (Gaussian distance weighting, diverging blue /
+  orange scale for `rel_mu` or `rel_beta`, grey for electrodes not OK, smooth
+  transitions), mouse rotation, top / left / right views, electrode names,
+  explicit "not a source localisation" legend. 10-10 positions in
+  `godot/data/electrodes_10_10.json`, generated from MNE by
+  `tools/generate_electrodes.py`. See `docs/brain-panel.md`.
 - Wheelchair scene: apartment from `scenarios/apartments/` (validated,
   exported for Godot), turn in place, drive, stop at once on `rest`, `action`
   opens the closed door in front and is ignored elsewhere, stop margin before
