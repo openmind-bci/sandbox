@@ -38,7 +38,8 @@ Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHA
 | Keyboard command simulator and fake band power (`keys`) | available |
 | `robot.yaml` and mock robot (`mock-robot`) | available |
 | MQTT ↔ WebSocket ↔ LSL gateway (`bridge`) | available |
-| Godot cockpit: robot twin, bird, wheelchair, live 3D brain | planned |
+| Godot cockpit: menus, panels, scene switching (`godot/`) | available (placeholder scenes) |
+| Scenes: robot twin, bird, wheelchair, boat; live 3D brain | planned |
 | ESP32 robot firmware | planned |
 | Adapter template for your own object | planned |
 
@@ -89,6 +90,9 @@ For the Godot cockpit and other WebSocket clients, start the gateway
 ```bash
 uv run openmind-sandbox bridge
 ```
+
+Then open the cockpit, `godot/project.godot`, in Godot 4.5
+([details](docs/cockpit.md)).
 
 Details: [keyboard simulator](docs/keys.md), [objects and mock robot](docs/objects.md),
 [robot configuration](docs/robot-config.md), [bridge](docs/bridge.md).

@@ -57,6 +57,7 @@ class MqttLink:
         self._on_connection_change = on_connection_change
         self._subscriptions: list[str] = []
         self._connected = threading.Event()
+        self._closing = False
         self._client = mqtt.Client(
             callback_api_version=CallbackAPIVersion.VERSION2,
             client_id=f"{name}-{uuid.uuid4().hex[:8]}",
@@ -100,6 +101,7 @@ class MqttLink:
 
     def close(self) -> None:
         """Disconnect and stop the network thread."""
+        self._closing = True
         self._client.disconnect()
         self._client.loop_stop()
         self._connected.clear()
@@ -133,7 +135,7 @@ class MqttLink:
         self, client: mqtt.Client, userdata: Any, flags: Any, reason: Any, properties: Any
     ) -> None:
         self._connected.clear()
-        if self._on_connection_change is not None:
+        if self._on_connection_change is not None and not self._closing:
             self._on_connection_change(False)
 
     def _handle_message(self, client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -> None:

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Godot 4.5 cockpit (`godot/`): `OpenMind` autoload (WebSocket link to the
+  bridge with automatic reconnection, signals for every message kind, decoder
+  heartbeat, `send_marker` and `send_event`), `ObjectController` with the
+  common safety rules per scene, main window with menus, collapsible panels
+  (command, progress, connection; 3D brain and signal reserved), scene
+  switching without restart, placeholder scenes, theme with the logo colors
+  and Space Grotesk, keyboard shortcuts. Headless tests run in CI.
+  See `docs/cockpit.md`.
+- `bridge`: clear message when the WebSocket port is already taken.
 - Gateway `openmind-sandbox bridge`: relays every valid protocol message from
   MQTT to WebSocket clients (`ws://127.0.0.1:8765`), drops and logs invalid
   ones, accepts markers and events from clients (validated, `v` and `ts`

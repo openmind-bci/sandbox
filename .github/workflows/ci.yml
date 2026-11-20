@@ -111,6 +111,9 @@ jobs:
       - name: Import the project
         if: steps.project.outputs.present == 'true'
         run: ./godot-bin --headless --path godot --import
+      - name: Run the cockpit tests
+        if: steps.project.outputs.present == 'true'
+        run: ./godot-bin --headless --path godot --script res://tests/run_tests.gd
 
   build:
     name: Build distribution

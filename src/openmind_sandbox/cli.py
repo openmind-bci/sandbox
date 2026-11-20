@@ -330,6 +330,14 @@ def bridge(
     except BrokerUnavailableError as error:
         typer.echo(str(error), err=True)
         raise typer.Exit(1) from error
+    except OSError as error:
+        typer.echo(
+            f"cannot listen on {ws_host}:{ws_port} ({error.strerror or error}); "
+            "another program may use this port: try --ws-port 8766 and start the cockpit "
+            "with `-- --bridge=ws://127.0.0.1:8766`.",
+            err=True,
+        )
+        raise typer.Exit(1) from error
     except KeyboardInterrupt:
         typer.echo("Bridge stopped.")
 
