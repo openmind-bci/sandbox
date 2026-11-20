@@ -461,7 +461,21 @@ func _nearest_vertex(mesh: BrainMesh, p: Vector3) -> int:
 
 func test_brain() -> void:
 	var mesh := BrainMesh.new()
+	mesh.generate_schematic()
+	mesh.prepare()
 	check(mesh.vertices.size() > 3000 and mesh.indices.size() % 3 == 0, "brain mesh built")
+	check(mesh.outwardness() > 0.5, "schematic normals point outwards")
+	var built := mesh.build(PackedColorArray())
+	check(built.get_surface_count() == 1, "mesh built without colours")
+	var loaded := BrainMesh.create()
+	if FileAccess.file_exists(BrainMesh.fsaverage_path()):
+		check(loaded.source == "fsaverage" and loaded.vertices.size() > 10000,
+				"fsaverage mesh loaded when exported")
+		check(loaded.outwardness() > 0.3, "fsaverage normals point outwards")
+	else:
+		check(loaded.source == "schematic", "schematic surface without fsaverage")
+	check(not BrainMesh.new().load_file("res://data/robot.json"),
+			"a file that is not a mesh is refused")
 	var colors := BrainColors.new()
 	var c4 := Vector3(0.06712, -0.0109, 0.06358)
 	var c3 := Vector3(-0.06536, -0.01163, 0.06436)

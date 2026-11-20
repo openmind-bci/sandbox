@@ -47,16 +47,40 @@ uv run --with "mne>=1.7" --with matplotlib python tools/check_topomap.py --once 
 It also prints the electrode with the lowest value (`lowest rel_mu: C4 (-0.43)`):
 the same area must turn blue in the 3D panel.
 
+## Brain surface: fsaverage
+
+The panel shows the FreeSurfer **fsaverage** brain when it has been exported on
+this machine, and a schematic surface otherwise (for example in CI). fsaverage is
+distributed under the [FreeSurfer license](https://surfer.nmr.mgh.harvard.edu/fswiki/FreeSurferSoftwareLicense):
+it is **downloaded by a script and never committed**.
+
+```bash
+uv run --with "mne>=1.7" --with nibabel python tools/fetch_fsaverage.py
+uv run --with "mne>=1.7" --with nibabel python tools/fetch_fsaverage.py --clean
+```
+
+The script downloads fsaverage with MNE into `$OPENMIND_DATA_DIR/freesurfer/`
+(about **760 MB** on disk) and writes a light mesh,
+`$OPENMIND_DATA_DIR/godot/brain_fsaverage.json` (about 1.2 MB: the ico-5
+subsampling of the pial surface, 20,484 vertices). `--clean` deletes the download
+once the mesh is written. `OPENMIND_DATA_DIR` defaults to `~/openmind-data`; the
+cockpit reads the same variable.
+
+The 10-05 electrode template of MNE is defined on this same brain, so no
+transform is needed: the electrodes sit 15 to 27 mm above the cortex all around
+the head (skull and scalp).
+
 ## How it is built
 
-- **Brain surface**: a schematic shape generated in code
-  (`godot/panels/brain/brain_mesh.gd`: two folded hemispheres and a fissure).
-  It is an original drawing, not an anatomical model: nothing to download and no
-  license to track. An anatomical mesh (for example FreeSurfer `fsaverage`,
-  which must be downloaded by script and never committed) can replace it later.
+- **Brain surface**: fsaverage as above, or the schematic shape generated in code
+  (`godot/panels/brain/brain_mesh.gd`: two folded hemispheres and a fissure, an
+  original drawing). Normals are computed once and turned outwards whatever the
+  winding of the source.
 - **Electrode positions**: `godot/data/electrodes_10_10.json`, generated from the
   MNE 10-05 template montage (`colin27_1005`, formerly `standard_1005`) by `tools/generate_electrodes.py`
   (`uv run --with "mne>=1.7" python tools/generate_electrodes.py`). Positions are
   in the MNE head frame and match OpenMind Plug.
 - **Colouring** (`brain_colors.gd`): Gaussian weights (σ = 24 mm) from every
-  electrode of the message to every vertex, precomputed once per montage.
+  electrode of the message to every vertex, precomputed once per montage and kept
+  only above 1 % (about 3 ms per update for fsaverage); the surface is
+  recoloured at most 20 times per second.

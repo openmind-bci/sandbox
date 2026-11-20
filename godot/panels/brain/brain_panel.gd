@@ -9,6 +9,8 @@ const LEGEND := "Blue: decrease (desynchronization) · orange: increase · grey:
 		+ "not OK.\nActivity estimated at the sensors: this is not a source localisation."
 ## Time constant of the colour transitions, in seconds.
 const SMOOTHING_S := 0.25
+## Largest colouring rate (the fsaverage mesh has about 20,000 vertices).
+const MAX_RECOLOR_HZ := 20.0
 const VIEWS := {"Top": Vector2(0.0, -1.45), "Left": Vector2(-PI / 2.0, -0.2),
 	"Right": Vector2(PI / 2.0, -0.2)}
 
@@ -20,7 +22,7 @@ var values := {}
 var targets := {}
 var messages := 0
 
-var mesh := BrainMesh.new()
+var mesh := BrainMesh.create()
 var colors := BrainColors.new()
 var positions := {}  # all 10-10 electrodes, MNE frame
 
@@ -33,6 +35,7 @@ var _legend: Label
 var _yaw := 0.0
 var _pitch := -0.6
 var _dirty := true
+var _since_recolor := 0.0
 var _channels_key := ""
 
 
@@ -42,7 +45,8 @@ func _ready() -> void:
 	_build_viewport()
 	_build_controls()
 	_legend = Label.new()
-	_legend.text = LEGEND
+	_legend.text = LEGEND + ("\nBrain: FreeSurfer fsaverage." if mesh.source == "fsaverage"
+			else "\nSchematic brain (run tools/fetch_fsaverage.py for fsaverage).")
 	_legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_legend.add_theme_font_size_override("font_size", 14)
 	_legend.add_theme_color_override("font_color", OpenMindTheme.TEXT_MUTED)
@@ -96,7 +100,8 @@ func _process(delta: float) -> void:
 		if absf(next - float(current)) > 1e-4:
 			values[label] = next
 			_dirty = true
-	if _dirty:
+	_since_recolor += delta
+	if _dirty and _since_recolor >= 1.0 / MAX_RECOLOR_HZ:
 		_recolor()
 
 
@@ -131,6 +136,7 @@ func _prepare(channels: Array) -> void:
 
 func _recolor() -> void:
 	_dirty = false
+	_since_recolor = 0.0
 	_instance.mesh = mesh.build(colors.colorize(values) if not colors.labels.is_empty()
 			else PackedColorArray())
 
@@ -152,6 +158,7 @@ func _build_viewport() -> void:
 	var material := StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
 	material.roughness = 0.85
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED  # winding differs between sources
 	_instance = MeshInstance3D.new()
 	_instance.material_override = material
 	world.add_child(_instance)
@@ -174,7 +181,7 @@ func _build_viewport() -> void:
 	world.add_child(world_env)
 
 	_pivot = Node3D.new()
-	_pivot.position = BrainMesh.to_godot(BrainMesh.CENTRE)
+	_pivot.position = BrainMesh.to_godot(mesh.centre)
 	world.add_child(_pivot)
 	_camera = Camera3D.new()
 	_camera.position = Vector3(0, 0, 0.36)

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- FreeSurfer fsaverage brain for the 3D panel: `tools/fetch_fsaverage.py`
+  downloads it with MNE into `$OPENMIND_DATA_DIR` (never committed) and exports
+  a 20,484-vertex mesh; the panel uses it when present, the schematic surface
+  otherwise. Faster colouring (sparse weights, at most 20 updates per second).
 - ESP32 robot firmware (`firmware/esp32-robot/`, PlatformIO): portable core
   with the protocol parsing, state machine and safety rules, unit-tested on the
   host (`pio test -e native`), and Arduino glue for Wi-Fi, MQTT, TB6612FNG and

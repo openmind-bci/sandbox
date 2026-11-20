@@ -19,57 +19,75 @@ var sigma := 0.024
 ## |value| shown with the full colour.
 var vmax := 0.5
 
+## Weights below this are dropped (sparse weights: much faster colouring).
+const MIN_WEIGHT := 0.01
+
 var labels: PackedStringArray = []
-## Per vertex: weights of the electrodes, in [member labels] order.
+## Per vertex: indices (in [member labels]) and weights of the electrodes that
+## matter for it.
+var _which: Array[PackedInt32Array] = []
 var _weights: Array[PackedFloat32Array] = []
 
 
 ## Precompute the weights of [param electrodes] (label -> position) for [param vertices].
 func prepare(vertices: PackedVector3Array, electrodes: Dictionary) -> void:
 	labels = PackedStringArray(electrodes.keys())
+	_which.clear()
 	_weights.clear()
 	var positions: Array[Vector3] = []
 	for label in labels:
 		positions.append(electrodes[label])
+	var inv := 1.0 / (sigma * sigma)
 	for v in vertices:
-		var row := PackedFloat32Array()
-		row.resize(labels.size())
+		var which := PackedInt32Array()
+		var weights := PackedFloat32Array()
 		for i in labels.size():
-			var d := v.distance_to(positions[i])
-			row[i] = exp(-(d * d) / (sigma * sigma))
-		_weights.append(row)
+			var w := exp(-v.distance_squared_to(positions[i]) * inv)
+			if w >= MIN_WEIGHT:
+				which.append(i)
+				weights.append(w)
+		_which.append(which)
+		_weights.append(weights)
 
 
 ## Colour of every vertex. [param values]: label -> float, or null when the
 ## electrode is not OK (missing labels count as absent).
 func colorize(values: Dictionary) -> PackedColorArray:
+	# Per electrode: 0 absent, 1 value, 2 not OK.
+	var kind := PackedInt32Array()
+	var value := PackedFloat32Array()
+	kind.resize(labels.size())
+	value.resize(labels.size())
+	for i in labels.size():
+		if values.has(labels[i]):
+			var v: Variant = values[labels[i]]
+			kind[i] = 2 if v == null else 1
+			value[i] = 0.0 if v == null else float(v)
 	var colors := PackedColorArray()
-	colors.resize(_weights.size())
-	for k in _weights.size():
-		var row := _weights[k]
+	colors.resize(_which.size())
+	for k in _which.size():
+		var which := _which[k]
+		var weights := _weights[k]
 		var total := 0.0
 		var good := 0.0
 		var bad := 0.0
-		for i in labels.size():
-			if not values.has(labels[i]):
-				continue
-			var w := row[i]
-			var value: Variant = values[labels[i]]
-			if value == null:
-				bad += w
-			else:
-				good += w
-				total += w * float(value)
-		var coverage := clampf(good + bad, 0.0, 1.0)
-		var colour := BASE
-		if good > 1e-6:
-			colour = diverging(total / good)
+		for j in which.size():
+			var i := which[j]
+			if kind[i] == 1:
+				good += weights[j]
+				total += weights[j] * value[i]
+			elif kind[i] == 2:
+				bad += weights[j]
+		if good + bad <= 1e-6:
+			colors[k] = BASE
+			continue
+		var colour := diverging(total / good) if good > 1e-6 else BASE
 		if bad > 1e-6:
 			colour = colour.lerp(BAD, bad / (good + bad))
-		colors[k] = BASE.lerp(colour, coverage)
+		colors[k] = BASE.lerp(colour, clampf(good + bad, 0.0, 1.0))
 	return colors
 
 
-func diverging(value: float) -> Color:
-	var t := clampf(value / vmax, -1.0, 1.0)
+func diverging(v: float) -> Color:
+	var t := clampf(v / vmax, -1.0, 1.0)
 	return ZERO.lerp(DECREASE, -t) if t < 0.0 else ZERO.lerp(INCREASE, t)
