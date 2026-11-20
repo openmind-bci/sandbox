@@ -1,10 +1,14 @@
 class_name BoatWorld
 extends Node3D
-## 3D lake of the boat scene: calm water (shader), grassy islands and shores,
-## striped buoys, an outdoor sky, and a small sailing boat built in code whose
-## sail rises and falls with the commands. Coordinates: (x, y) -> (x, 0, -y).
+## 3D sea of the boat scene: calm water to the horizon (shader), grassy islands,
+## ocean buoys, an outdoor sky, and a CC0 sail boat model whose sail rises and
+## falls with the commands. Coordinates: (x, y) -> (x, 0, -y).
 
-const SHORE_WIDTH := 30.0
+const SAIL_BOAT := "res://assets/models/sail_boat/sail_boat.glb"
+## Turn of the boat model so that its bow points along +X (the boat's forward).
+const MODEL_YAW := PI / 2.0
+## Side of the detailed water patch that follows the boat, in metres.
+const NEAR_WATER := 400.0
 
 var sun: DirectionalLight3D
 var environment: Environment
@@ -17,6 +21,8 @@ var course: TwinCourse
 
 var _boat_node: Node3D
 var _sail: MeshInstance3D
+var _model_sail: Node3D
+var _near_water: MeshInstance3D
 var _rudder: Node3D
 var _buoy_materials: Array[StandardMaterial3D] = []
 var _sail_amount := 0.0
@@ -33,7 +39,7 @@ func setup(model: BoatModel, lake_course: TwinCourse) -> void:
 	environment = WorldKit.environment(self, WorldKit.OUTDOOR_SKY, 0.9)
 	environment.fog_enabled = true
 	environment.fog_light_color = Color("#C7D6EA")
-	environment.fog_density = 0.003
+	environment.fog_density = 0.0012
 	sun = WorldKit.sun(self, -45.0, -35.0, 1.0, 80.0)
 	_build_water()
 	_build_land()
@@ -61,8 +67,15 @@ func update(delta: float) -> void:
 	_boat_node.rotation = Vector3(0.03 * sin(_time * 0.9), boat.heading,
 			0.04 * sin(_time * 1.1) - 0.15 * boat.turn_rate)
 	_sail_amount = move_toward(_sail_amount, 1.0 if boat.sail_up else 0.08, 0.8 * delta)
-	_sail.scale = Vector3(1, _sail_amount, 1)
-	_sail.position.y = 0.6 + 1.3 * _sail_amount
+	if _sail != null:
+		_sail.scale = Vector3(1, _sail_amount, 1)
+		_sail.position.y = 0.6 + 1.3 * _sail_amount
+	if _model_sail != null:
+		_model_sail.visible = _sail_amount > 0.1
+		_model_sail.scale = Vector3(1, maxf(_sail_amount, 0.1), 1)
+	# The detailed water follows the boat in 2 m steps.
+	_near_water.position = (to_godot(boat.position) / 2.0).round() * 2.0
+	_near_water.position.y = 0.0
 	_rudder.rotation.y = boat.rudder * 0.5
 	for i in _buoy_materials.size():
 		var colour := OpenMindTheme.ACCENT if i == course.next_index else (
@@ -73,33 +86,30 @@ func update(delta: float) -> void:
 
 
 func _build_water() -> void:
-	var water := MeshInstance3D.new()
-	var plane := PlaneMesh.new()
-	plane.size = course.arena + Vector2(2 * SHORE_WIDTH, 2 * SHORE_WIDTH)
-	plane.subdivide_width = 160
-	plane.subdivide_depth = 110
-	water.mesh = plane
-	water.position = to_godot(course.arena / 2.0)
+	# Open sea to the horizon: a detailed patch that follows the boat (waves are
+	# computed in world space, so it slides seamlessly) and a vast flat plane.
 	var material := ShaderMaterial.new()
 	material.shader = load("res://scenes/boat/water.gdshader")
-	water.material_override = material
-	add_child(water)
+	_near_water = MeshInstance3D.new()
+	var near := PlaneMesh.new()
+	near.size = Vector2(NEAR_WATER, NEAR_WATER)
+	near.subdivide_width = 200
+	near.subdivide_depth = 200
+	_near_water.mesh = near
+	_near_water.material_override = material
+	add_child(_near_water)
+	var far := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(20000, 20000)
+	far.mesh = plane
+	far.position = Vector3(0, -0.05, 0)
+	far.material_override = material
+	add_child(far)
 
 
 func _build_land() -> void:
 	var grass := WorldKit.textured("aerial_grass_rock", 0.1)
 	var sand := WorldKit.plain(Color("#CDB98F"), 0.9)
-	var size := course.arena
-	# Shores around the lake: long gentle banks.
-	var banks := [
-		[Vector2(size.x / 2.0, -SHORE_WIDTH / 2.0), Vector2(size.x + 2 * SHORE_WIDTH, SHORE_WIDTH)],
-		[Vector2(size.x / 2.0, size.y + SHORE_WIDTH / 2.0),
-			Vector2(size.x + 2 * SHORE_WIDTH, SHORE_WIDTH)],
-		[Vector2(-SHORE_WIDTH / 2.0, size.y / 2.0), Vector2(SHORE_WIDTH, size.y)],
-		[Vector2(size.x + SHORE_WIDTH / 2.0, size.y / 2.0), Vector2(SHORE_WIDTH, size.y)],
-	]
-	for bank in banks:
-		WorldKit.box(self, Vector3(bank[1].x, 1.2, bank[1].y), to_godot(bank[0], 0.4), grass)
 	for island in course.obstacles:
 		var centre := Vector2(island.x, island.y)
 		var beach := WorldKit.cylinder(self, island.z, 0.5, to_godot(centre, 0.1), sand)
@@ -139,32 +149,34 @@ func _build_buoys() -> void:
 func _build_boat() -> void:
 	_boat_node = Node3D.new()
 	add_child(_boat_node)
+	# CC0 sail boat by Quaternius (Poly Pizza); its "Sail" node rises and falls.
+	var model := WorldKit.model_file(_boat_node, SAIL_BOAT, Vector3.ZERO, MODEL_YAW,
+			boat.length)
+	if model != null:
+		_model_sail = model.find_child("Sail", true, false) as Node3D
+		WorldKit.model(_boat_node, "lifebuoy", Vector3(-0.6, 0.55, boat.width / 2.0), 0.0, 0.45)
+		_rudder = Node3D.new()
+		_boat_node.add_child(_rudder)
+		return
+	_simple_boat()
+
+
+## Geometric boat when the model is not downloaded.
+func _simple_boat() -> void:
 	var deck := WorldKit.textured("brown_planks_03", 1.5)
 	var hull := WorldKit.plain(Color("#F3F5FA"), 0.4)
 	var dark := WorldKit.plain(Color("#2A2F3A"), 0.5)
-	# Local +X is the bow.
 	WorldKit.box(_boat_node, Vector3(boat.length * 0.75, 0.5, boat.width), Vector3(-0.2, 0.1, 0),
 			hull)
-	var bow := MeshInstance3D.new()
-	var prism := PrismMesh.new()
-	prism.size = Vector3(boat.width, boat.length * 0.3, 0.5)
-	bow.mesh = prism
-	bow.rotation = Vector3(PI / 2.0, 0, -PI / 2.0)
-	bow.position = Vector3(boat.length * 0.33, 0.1, 0)
-	bow.material_override = hull
-	_boat_node.add_child(bow)
 	WorldKit.box(_boat_node, Vector3(boat.length * 0.72, 0.04, boat.width * 0.92),
 			Vector3(-0.2, 0.37, 0), deck)
 	WorldKit.cylinder(_boat_node, 0.05, 3.2, Vector3(0.2, 1.95, 0), dark)
-	# The sail swings out from the mast (boom at about 35°), so it shows from behind.
 	var boom := Node3D.new()
 	boom.position = Vector3(0.2, 0, 0)
 	boom.rotation.y = 0.6
 	_boat_node.add_child(boom)
 	_sail = WorldKit.box(boom, Vector3(1.4, 2.6, 0.02), Vector3(-0.75, 1.9, 0),
 			WorldKit.plain(Color("#FFFDF5"), 0.8))
-	WorldKit.model(_boat_node, "lifebuoy", Vector3(-1.05, 0.39, boat.width / 2.0 + 0.04), 0.0,
-			0.55)
 	_rudder = Node3D.new()
 	_rudder.position = Vector3(-boat.length * 0.58, 0.0, 0)
 	_boat_node.add_child(_rudder)

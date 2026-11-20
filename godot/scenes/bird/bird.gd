@@ -85,7 +85,7 @@ func _process(delta: float) -> void:
 	if running:
 		_handle(protocol.advance(delta))
 	_animate(delta)
-	_world.update(_view.scroll, _view.bank, _view.flap, delta)
+	_world.update(_view.scroll, _view.bank, _view.flap, delta, _view.flapping)
 	if _banner_left > 0.0:
 		_banner_left -= delta
 		if _banner_left <= 0.0:

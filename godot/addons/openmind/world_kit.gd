@@ -146,7 +146,12 @@ static func hud_backdrop(hud: Control) -> void:
 ## has not been downloaded (tools/fetch_polyhaven.py).
 static func model(parent: Node, asset: String, position: Vector3, yaw: float = 0.0,
 		size: float = 0.0) -> Node3D:
-	var path := TEXTURES + asset + "/" + asset + ".gltf"
+	return model_file(parent, TEXTURES + asset + "/" + asset + ".gltf", position, yaw, size)
+
+
+## Same as [method model] for any glTF / GLB file of the project.
+static func model_file(parent: Node, path: String, position: Vector3, yaw: float = 0.0,
+		size: float = 0.0) -> Node3D:
 	if not ResourceLoader.exists(path):
 		return null
 	var scene: PackedScene = load(path)
@@ -165,6 +170,17 @@ static func model(parent: Node, asset: String, position: Vector3, yaw: float = 0
 	holder.rotation.y = yaw
 	parent.add_child(holder)
 	return holder
+
+
+## First node of [param type] under [param root] (AnimationPlayer...), or null.
+static func find_child_of_type(root: Node, type: String) -> Node:
+	var stack: Array[Node] = [root]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		if node.is_class(type):
+			return node
+		stack.append_array(node.get_children())
+	return null
 
 
 ## Bounding box of every mesh under [param root], in the frame of [param root].

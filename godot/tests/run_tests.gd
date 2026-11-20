@@ -642,10 +642,17 @@ func test_boat() -> void:
 	check(boat.state == BoatModel.ANCHORED and boat.position.is_equal_approx(anchored_at),
 			"anchor: the boat stops and does not drift")
 	boat = _boat()
-	boat.heading = PI  # towards the west shore, close by
+	boat.place(Vector2(12.0, 27.0), 0.0)  # heading east, towards the first island
 	boat.apply("forward")
 	_sail(boat, 20.0)
-	check(boat.bumps == 1 and boat.position.x >= boat.radius - 1e-3, "stops on the shore, one bump")
+	var island := boat.islands[0]
+	check(boat.bumps == 1 and boat.position.distance_to(Vector2(island.x, island.y))
+			>= island.z + boat.radius - 1e-3, "stops on an island shore, one bump")
+	boat = _boat()
+	boat.heading = PI  # west: open sea, no boundary
+	boat.apply("forward")
+	_sail(boat, 20.0)
+	check(boat.position.x < 0.0 and boat.bumps == 0, "open sea: no shore at the course edge")
 	boat = _boat()
 	boat.halt()
 	boat.apply("forward")

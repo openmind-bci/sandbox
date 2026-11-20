@@ -1,13 +1,14 @@
 class_name BoatModel
 extends RefCounted
-## Sailing boat with inertia and drift, on a lake (godot/data/courses/boat_lake.json).
+## Sailing boat with inertia and drift, at sea (godot/data/courses/boat_lake.json:
+## islands to sail around, buoys to reach; the course area is not a boundary).
 ##
 ## forward hoists the sail (the boat speeds up slowly), rest lowers it (the boat
 ## drifts and slows down slowly, pushed by the wind), left / right turn the rudder
 ## while held (the sail stays as it is; the boat turns faster when it moves),
 ## action drops the anchor (the boat stops and stays until the sail is hoisted
-## again). The boat never enters an island or leaves the lake: it stops against
-## the shore and counts a bump. A virtual object: slow and forgiving on purpose.
+## again). The boat never enters an island: it stops against the shore and
+## counts a bump. With [member bounded], the course area also acts as a shore. A virtual object: slow and forgiving on purpose.
 
 const SAILING := "SAILING"
 const DRIFTING := "DRIFTING"
@@ -28,6 +29,8 @@ var length := 3.2
 var width := 1.3
 
 var lake := Vector2(60, 40)
+## Whether the edges of [member lake] stop the boat (open sea by default).
+var bounded := false
 ## Islands as Vector3(x, y, radius).
 var islands: Array[Vector3] = []
 
@@ -152,7 +155,8 @@ func telemetry() -> Dictionary:
 
 
 func _blocked(p: Vector2) -> bool:
-	if p.x < radius or p.y < radius or p.x > lake.x - radius or p.y > lake.y - radius:
+	if bounded and (p.x < radius or p.y < radius or p.x > lake.x - radius
+			or p.y > lake.y - radius):
 		return true
 	for island in islands:
 		if p.distance_to(Vector2(island.x, island.y)) < island.z + radius:

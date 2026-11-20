@@ -18,7 +18,11 @@ var sun: DirectionalLight3D
 var environment: Environment
 var camera: Camera3D
 
+const PIGEON := "res://assets/models/pigeon/pigeon.glb"
+const FLAP := "flap-wings-animation"
+
 var _terrain: Node3D
+var _animation: AnimationPlayer
 var _bird: Node3D
 var _wings: Array[Node3D] = []
 var _forward := 0.0
@@ -28,7 +32,7 @@ func setup() -> void:
 	environment = WorldKit.environment(self, WorldKit.OUTDOOR_SKY, 0.9)
 	environment.fog_enabled = true
 	environment.fog_light_color = Color("#BFD0E6")
-	environment.fog_density = 0.004
+	environment.fog_density = 0.0025
 	environment.fog_sky_affect = 0.2
 	sun = WorldKit.sun(self, -40.0, -30.0, 1.0, 120.0)
 	_terrain = Node3D.new()
@@ -57,13 +61,17 @@ func apply_quality(quality: String) -> void:
 
 
 ## Follow the 2D state of the scene: scroll (pixels), bank (radians), wing phase.
-func update(scroll: Vector2, bank: float, flap: float, delta: float) -> void:
+func update(scroll: Vector2, bank: float, flap: float, delta: float,
+		flapping: bool = false) -> void:
 	_forward = fposmod(_forward + FORWARD_SPEED * delta, TILE)
 	var offset := Vector3(-scroll.x * METRES_PER_PIXEL, -scroll.y * METRES_PER_PIXEL * 0.5,
 			_forward)
 	_terrain.position = Vector3(fposmod(offset.x + TILE / 2.0, TILE) - TILE / 2.0,
 			offset.y, offset.z)
 	_bird.rotation = Vector3(0, 0, -bank)
+	if _animation != null:
+		# Quick wing beats while climbing, slow ones while gliding.
+		_animation.speed_scale = 1.6 if flapping else 0.35
 	var lift := sin(flap)
 	for i in _wings.size():
 		var side := -1.0 if i == 0 else 1.0
@@ -106,6 +114,28 @@ func _build_bird() -> void:
 	_bird = Node3D.new()
 	_bird.position = Vector3(0, BIRD_HEIGHT, 0)
 	add_child(_bird)
+	# CC0 pigeon by mujtaba-io (OpenGameArt), rigged and animated; it faces +Z
+	# and flies here towards -Z: a half turn.
+	var pigeon := WorldKit.model_file(_bird, PIGEON, Vector3(0, -0.3, 0), PI, 1.3)
+	if pigeon != null:
+		# The model has no texture: give it the slate grey of a pigeon.
+		var feathers := WorldKit.plain(Color("#6F7A8C"), 0.85)
+		var stack: Array[Node] = [pigeon]
+		while not stack.is_empty():
+			var node: Node = stack.pop_back()
+			stack.append_array(node.get_children())
+			if node is MeshInstance3D:
+				(node as MeshInstance3D).material_override = feathers
+		_animation = WorldKit.find_child_of_type(pigeon, "AnimationPlayer")
+		if _animation != null and _animation.has_animation(FLAP):
+			_animation.get_animation(FLAP).loop_mode = Animation.LOOP_LINEAR
+			_animation.play(FLAP)
+		return
+	_simple_bird()
+
+
+## Geometric bird when the pigeon model is not downloaded.
+func _simple_bird() -> void:
 	var feathers := WorldKit.plain(Color("#F3F5FA"), 0.7)
 	var accent := WorldKit.plain(Color("#FFC857"), 0.5)
 	var dark := WorldKit.plain(Color("#2A2F3A"), 0.4)

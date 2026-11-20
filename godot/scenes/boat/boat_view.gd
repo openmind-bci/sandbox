@@ -28,7 +28,10 @@ func _draw() -> void:
 		draw_circle(to_screen.call(Vector2(w.x, w.y)), 3.0, colour)
 	var forward := Vector2(cos(boat.heading), sin(boat.heading))
 	var side := forward.orthogonal()
-	var tip: Vector2 = to_screen.call(boat.position + forward * 2.0)
-	var left: Vector2 = to_screen.call(boat.position - forward * 1.5 + side * 1.0)
-	var right: Vector2 = to_screen.call(boat.position - forward * 1.5 - side * 1.0)
+	# Out of the map at open sea: show the boat on its edge.
+	var at := Vector2(clampf(boat.position.x, 0.0, course.arena.x),
+			clampf(boat.position.y, 0.0, course.arena.y))
+	var tip: Vector2 = to_screen.call(at + forward * 2.0)
+	var left: Vector2 = to_screen.call(at - forward * 1.5 + side * 1.0)
+	var right: Vector2 = to_screen.call(at - forward * 1.5 - side * 1.0)
 	draw_colored_polygon(PackedVector2Array([tip, left, right]), OpenMindTheme.TEXT)
