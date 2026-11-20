@@ -8,7 +8,6 @@ extends Node3D
 ## (x, 0, -y); a heading θ (counter-clockwise from +x) is a rotation of θ around Y.
 ## Textures and the HDRI sky are CC0 assets from Poly Haven (see ASSETS.md).
 
-const TEXTURES := "res://assets/polyhaven/"
 const WALL_HEIGHT := 0.35
 const WALL_THICKNESS := 0.06
 const POST_HEIGHT := 0.32
@@ -95,32 +94,8 @@ func update(delta: float) -> void:
 
 
 func _build_environment() -> void:
-	environment = Environment.new()
-	var sky := Sky.new()
-	var panorama := PanoramaSkyMaterial.new()
-	var hdr := TEXTURES + "small_empty_room_3/small_empty_room_3_1k.hdr"
-	if ResourceLoader.exists(hdr):
-		panorama.panorama = load(hdr)
-	sky.sky_material = panorama
-	environment.background_mode = Environment.BG_SKY
-	environment.sky = sky
-	environment.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	environment.tonemap_exposure = 0.8
-	environment.ambient_light_energy = 0.7
-	environment.ssao_radius = 0.15
-	environment.ssao_intensity = 1.5
-	environment.glow_intensity = 0.4
-	var world_env := WorldEnvironment.new()
-	world_env.environment = environment
-	add_child(world_env)
-	sun = DirectionalLight3D.new()
-	sun.rotation = Vector3(deg_to_rad(-55), deg_to_rad(35), 0)
-	sun.light_energy = 0.8
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 8.0
-	add_child(sun)
+	environment = WorldKit.environment(self, WorldKit.INDOOR_SKY)
+	sun = WorldKit.sun(self)
 
 
 func _build_room() -> void:
@@ -130,7 +105,7 @@ func _build_room() -> void:
 	plane.size = size + Vector2(1.0, 1.0)
 	floor.mesh = plane
 	floor.position = to_godot(size / 2.0)
-	floor.material_override = _material("concrete_floor_worn_001", 1.0)
+	floor.material_override = WorldKit.textured("concrete_floor_worn_001", 1.0)
 	add_child(floor)
 	var walls := [
 		[Vector2(size.x / 2.0, -WALL_THICKNESS / 2.0), Vector2(size.x + 2 * WALL_THICKNESS, WALL_THICKNESS)],
@@ -138,7 +113,7 @@ func _build_room() -> void:
 		[Vector2(-WALL_THICKNESS / 2.0, size.y / 2.0), Vector2(WALL_THICKNESS, size.y)],
 		[Vector2(size.x + WALL_THICKNESS / 2.0, size.y / 2.0), Vector2(WALL_THICKNESS, size.y)],
 	]
-	var wall_material := _material("plastered_wall_04", 2.0)
+	var wall_material := WorldKit.textured("plastered_wall_04", 2.0)
 	for wall in walls:
 		var box := BoxMesh.new()
 		box.size = Vector3(wall[1].x, WALL_HEIGHT, wall[1].y)
@@ -150,7 +125,7 @@ func _build_room() -> void:
 
 
 func _build_course() -> void:
-	var wood := _material("brown_planks_09", 4.0)
+	var wood := WorldKit.textured("brown_planks_09", 4.0)
 	for o in course.obstacles:
 		var post := MeshInstance3D.new()
 		var cylinder := CylinderMesh.new()
@@ -192,7 +167,7 @@ func _build_robot() -> void:
 	add_child(_robot_node)
 	var length := robot.length
 	var width := robot.width
-	var plastic := _plain(Color("#2A2F3A"), 0.6)
+	var plastic := WorldKit.plain(Color("#2A2F3A"), 0.6)
 	var chassis := MeshInstance3D.new()
 	var body := BoxMesh.new()
 	body.size = Vector3(length, CHASSIS_HEIGHT, width * 0.8)
@@ -205,10 +180,10 @@ func _build_robot() -> void:
 	pcb.size = Vector3(length * 0.6, 0.004, width * 0.55)
 	board.mesh = pcb
 	board.position = Vector3(-length * 0.05, chassis.position.y + CHASSIS_HEIGHT / 2.0 + 0.002, 0)
-	board.material_override = _plain(Color("#1E6B4A"), 0.4)
+	board.material_override = WorldKit.plain(Color("#1E6B4A"), 0.4)
 	_robot_node.add_child(board)
 	# Wheels on each side, at the centre (differential drive).
-	var rubber := _plain(Color("#111111"), 0.9)
+	var rubber := WorldKit.plain(Color("#111111"), 0.9)
 	for side in [-1.0, 1.0]:
 		var wheel := MeshInstance3D.new()
 		var tyre := CylinderMesh.new()
@@ -229,7 +204,7 @@ func _build_robot() -> void:
 	ball.height = 0.024
 	caster.mesh = ball
 	caster.position = Vector3(-length * 0.4, 0.012, 0)
-	caster.material_override = _plain(Color("#B9C0CC"), 0.3, 0.8)
+	caster.material_override = WorldKit.plain(Color("#B9C0CC"), 0.3, 0.8)
 	_robot_node.add_child(caster)
 	# HC-SR04 at the front: a blue board and two silver "eyes".
 	var sensor := MeshInstance3D.new()
@@ -237,9 +212,9 @@ func _build_robot() -> void:
 	sensor_board.size = Vector3(0.004, 0.02, 0.045)
 	sensor.mesh = sensor_board
 	sensor.position = Vector3(length / 2.0, chassis.position.y + 0.01, 0)
-	sensor.material_override = _plain(Color("#1F4FA8"), 0.5)
+	sensor.material_override = WorldKit.plain(Color("#1F4FA8"), 0.5)
 	_robot_node.add_child(sensor)
-	var metal := _plain(Color("#D5D9E0"), 0.25, 0.9)
+	var metal := WorldKit.plain(Color("#D5D9E0"), 0.25, 0.9)
 	for side in [-1.0, 1.0]:
 		var eye := MeshInstance3D.new()
 		var can := CylinderMesh.new()
@@ -287,31 +262,3 @@ func _place_camera(blend: float) -> void:
 	camera.position = camera.position.lerp(eye, blend)
 	if camera.position.distance_to(target) > 0.01:
 		camera.look_at(target, Vector3.UP)
-
-
-# --- Materials ---------------------------------------------------------------------
-
-
-## Poly Haven material with world-space triplanar mapping, [param tiles] per metre.
-func _material(asset: String, tiles: float) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	var base := TEXTURES + asset + "/" + asset
-	if ResourceLoader.exists(base + "_diff_1k.jpg"):
-		material.albedo_texture = load(base + "_diff_1k.jpg")
-		material.normal_enabled = true
-		material.normal_texture = load(base + "_nor_gl_1k.jpg")
-		material.roughness_texture = load(base + "_rough_1k.jpg")
-	else:
-		material.albedo_color = Color("#8A8F99")
-	material.uv1_triplanar = true
-	material.uv1_world_triplanar = true
-	material.uv1_scale = Vector3.ONE * tiles
-	return material
-
-
-func _plain(colour: Color, roughness: float, metallic: float = 0.0) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = colour
-	material.roughness = roughness
-	material.metallic = metallic
-	return material

@@ -17,6 +17,10 @@ resolution, to stay light).
 | `godot/assets/polyhaven/white_plaster_02/` | White Plaster 02 by Rob Tuytel, [Poly Haven](https://polyhaven.com/a/white_plaster_02) | CC0 | wheelchair walls |
 | `godot/assets/polyhaven/wood_planks_grey/` | Wood Planks Grey by Rob Tuytel, [Poly Haven](https://polyhaven.com/a/wood_planks_grey) | CC0 | wheelchair doors |
 | `godot/assets/polyhaven/small_empty_room_3/` | Small Empty Room 3 by Sergej Majboroda, [Poly Haven](https://polyhaven.com/a/small_empty_room_3) | CC0 | robot twin and wheelchair lighting |
+| `godot/assets/polyhaven/fabric_pattern_07/` | Fabric Pattern 07 by Rob Tuytel, [Poly Haven](https://polyhaven.com/a/fabric_pattern_07) | CC0 | wheelchair furniture |
+| `godot/assets/polyhaven/aerial_grass_rock/` | Aerial Grass Rock by Rob Tuytel, [Poly Haven](https://polyhaven.com/a/aerial_grass_rock) | CC0 | bird landscape |
+| `godot/assets/polyhaven/brown_planks_03/` | Brown Planks 03 by Rob Tuytel, [Poly Haven](https://polyhaven.com/a/brown_planks_03) | CC0 | boat deck |
+| `godot/assets/polyhaven/kloofendal_48d_partly_cloudy_puresky/` | Kloofendal 48d Partly Cloudy (Pure Sky) by Greg Zaal, Jarod Guest, [Poly Haven](https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky) | CC0 | bird and boat sky |
 | `godot/addons/openmind/fonts/SpaceGrotesk.ttf` | Florian Karsten, [Space Grotesk](https://github.com/floriankarsten/space-grotesk) (via Google Fonts) | SIL Open Font License 1.1 (`fonts/OFL.txt`) | variable font |
 
 The 3D panel shows the FreeSurfer fsaverage brain, downloaded on each machine by

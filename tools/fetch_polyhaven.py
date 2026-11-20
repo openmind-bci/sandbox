@@ -24,10 +24,14 @@ TEXTURES = {
     "laminate_floor_02": "wheelchair floor",
     "white_plaster_02": "wheelchair walls",
     "wood_planks_grey": "wheelchair doors",
+    "fabric_pattern_07": "wheelchair furniture",
+    "aerial_grass_rock": "bird landscape",
+    "brown_planks_03": "boat deck",
 }
 #: HDRI id -> where it is used.
 HDRIS = {
     "small_empty_room_3": "robot twin and wheelchair lighting",
+    "kloofendal_48d_partly_cloudy_puresky": "bird and boat sky",
 }
 MAPS = {"Diffuse": "diff", "nor_gl": "nor_gl", "Rough": "rough"}
 API = "https://api.polyhaven.com"
@@ -61,6 +65,8 @@ def main() -> int:
             download(hdri["url"], TARGET / asset_id / f"{asset_id}_1k.hdr")
         else:
             for key, suffix in MAPS.items():
+                if key == "Diffuse" and key not in files:
+                    key = "col_1"  # some textures come in colour variants
                 jpg = files[key]["1k"]["jpg"]  # type: ignore[index]
                 download(jpg["url"], TARGET / asset_id / f"{asset_id}_{suffix}_1k.jpg")
         authors = ", ".join(info.get("authors", {}))  # type: ignore[arg-type]

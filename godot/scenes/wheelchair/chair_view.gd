@@ -5,6 +5,8 @@ extends Control
 var chair: ChairModel
 var course: TwinCourse
 var names: PackedStringArray = []
+## Small map over the 3D view.
+var minimap := false
 
 var _scale := 100.0
 var _origin := Vector2.ZERO
@@ -21,7 +23,9 @@ func to_screen(point: Vector2) -> Vector2:
 func _draw() -> void:
 	if chair == null:
 		return
-	var margin := 24.0
+	var margin := 6.0 if minimap else 24.0
+	if minimap:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(OpenMindTheme.BACKGROUND, 0.75))
 	_scale = minf((size.x - 2 * margin) / chair.size.x, (size.y - 2 * margin) / chair.size.y)
 	_origin = (size - chair.size * _scale) / 2.0
 	draw_rect(Rect2(_origin, chair.size * _scale), OpenMindTheme.PANEL)

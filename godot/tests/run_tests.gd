@@ -39,6 +39,7 @@ func _run() -> void:
 	test_calibration_protocol()
 	await test_bird_scene()
 	test_chair()
+	await test_3d_worlds()
 	await test_brain()
 	await test_signal_panel()
 	await test_cockpit()
@@ -555,6 +556,49 @@ func test_signal_panel() -> void:
 	panel.set_window(10.0)
 	check(panel.buffers[0].size() == 2500, "10 s window")
 	panel.queue_free()
+	await process_frame
+
+
+func test_3d_worlds() -> void:
+	var twin: Node = load("res://scenes/robot_twin/robot_twin.tscn").instantiate()
+	root.add_child(twin)
+	await process_frame
+	var world: TwinWorld = twin.get_node("TwinWorld")
+	check(world.camera != null and world.sun != null, "twin world built")
+	twin.robot.resume()
+	twin.robot.apply("forward")
+	for i in 50:
+		twin.robot.step(0.02)
+	world.update(1.0)
+	var node_pos: Vector3 = world._robot_node.position
+	check(node_pos.is_equal_approx(TwinWorld.to_godot(twin.robot.position)),
+			"3D robot follows the model")
+	world.cycle_camera()
+	world.update(1.0)
+	check(world.camera_mode == "top", "camera modes cycle")
+	twin.apply_quality(GraphicsQuality.LIGHT)
+	check(not world.sun.shadow_enabled and not world.environment.ssao_enabled,
+			"light quality removes shadows and ambient occlusion")
+	twin.apply_quality(GraphicsQuality.REALISTIC)
+	check(world.sun.shadow_enabled, "realistic quality restores shadows")
+	twin.queue_free()
+
+	var scene: Node = load("res://scenes/wheelchair/wheelchair.tscn").instantiate()
+	root.add_child(scene)
+	await process_frame
+	var chair_world: ChairWorld = scene.get_node("ChairWorld")
+	check(chair_world.door_angle(0) == 0.0, "door closed at start")
+	scene.chair.resume()
+	scene.chair.position = Vector2(2.9, 2.1)
+	scene.chair.heading = 0.0
+	check(scene.chair.apply("action") == "bedroom", "action opens the door in front")
+	for i in 3:
+		chair_world.update(0.5)
+	check(is_equal_approx(chair_world.door_angle(0), -PI / 2.0), "door swings open in 3D")
+	for mode in ["first_person", "top", "chase"]:
+		chair_world.cycle_camera()
+		check(chair_world.camera_mode == mode, "wheelchair camera %s" % mode)
+	scene.queue_free()
 	await process_frame
 
 
