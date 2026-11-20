@@ -131,3 +131,69 @@ def test_mock_robot_moves_on_commands_and_stops_without_status() -> None:
     assert states[-1] == ("SAFETY_STOP", "no_status")
     telemetry = [m for m in collector.messages if isinstance(m, Event) and m.kind == "telemetry"]
     assert max(m.data["speed_mps"] for m in telemetry) > 0
+
+
+def test_bridge_relays_mqtt_to_websocket_and_markers_to_mqtt_and_lsl() -> None:
+    import asyncio
+    import json
+
+    import pylsl
+    from websockets.sync.client import connect
+
+    from openmind_sandbox.bridge import LSL_SOURCE_ID, Bridge
+
+    gateway = Bridge(BROKER_HOST, BROKER_PORT, ws_port=0)
+    ready = threading.Event()
+    thread = threading.Thread(
+        target=lambda: asyncio.run(gateway.run(on_ready=ready.set)), daemon=True
+    )
+    thread.start()
+    assert ready.wait(10)
+    collector = Collector()
+    sub = subscribed_link(collector)
+    inlet = None
+    try:
+        streams = pylsl.resolve_byprop("source_id", LSL_SOURCE_ID, 1, 5.0)
+        assert streams, "LSL markers stream of the bridge not found"
+        inlet = pylsl.StreamInlet(streams[0])
+        inlet.open_stream(5.0)
+        with connect(f"ws://127.0.0.1:{gateway.ws_port}") as ws:
+            hello = json.loads(ws.recv(timeout=5))
+            assert hello["kind"] == "hello"
+            assert hello["mqtt_connected"] is True
+
+            # MQTT -> WebSocket, with an invalid message dropped on the way.
+            with MqttLink(BROKER_HOST, BROKER_PORT, name="test-decoder") as decoder:
+                decoder._client.publish(topics.COMMANDS, b'{"v":1,"command":"jump"}')
+                decoder.publish(Command(command="right", confidence=0.9, user="P02", seq=7))
+                frame = json.loads(ws.recv(timeout=5))
+            assert frame["topic"] == topics.COMMANDS
+            assert frame["message"]["command"] == "right"
+
+            # WebSocket -> MQTT + LSL.
+            sent_at = pylsl.local_clock()
+            ws.send(json.dumps({"kind": "marker", "message": {
+                "type": "cue", "label": "left", "trial": 1, "scene": "test"}}))  # fmt: skip
+            sample, stamp = inlet.pull_sample(timeout=5.0)
+            assert sample is not None
+            assert json.loads(sample[0])["label"] == "left"
+            assert abs(stamp - sent_at) < 0.5
+
+            # Rejected client message gets an error reply.
+            ws.send(json.dumps({"kind": "command", "message": {}}))
+            while True:
+                reply = json.loads(ws.recv(timeout=5))
+                if reply["kind"] == "error":
+                    break
+            assert "not accepted" in reply["error"]
+        time.sleep(0.3)
+    finally:
+        if inlet is not None:
+            inlet.close_stream()
+        sub.close()
+        gateway.stop()
+        thread.join(5)
+    markers = [m for m in collector.messages if m.KIND == "marker"]
+    assert [m.label for m in markers] == ["left"]  # type: ignore[attr-defined]
+    assert gateway.stats.rejected_mqtt >= 1
+    assert gateway.stats.lsl_markers == 1

@@ -293,5 +293,46 @@ def mock_robot(
         typer.echo("\nMock robot stopped.")
 
 
+@app.command()
+def bridge(
+    host: Host = DEFAULT_HOST,
+    port: Port = DEFAULT_PORT,
+    ws_host: Annotated[
+        str, typer.Option(help="WebSocket address; 127.0.0.1 accepts this machine only.")
+    ] = "127.0.0.1",
+    ws_port: Annotated[int, typer.Option(help="WebSocket port.")] = 8765,
+    lsl: Annotated[
+        bool, typer.Option(help="Publish received markers on the LSL markers stream.")
+    ] = True,
+    verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Log every client.")] = False,
+) -> None:
+    """Relay protocol messages between MQTT and WebSocket clients (Godot), markers to LSL."""
+    import asyncio
+    import logging
+
+    from openmind_sandbox.bridge import Bridge
+
+    logging.basicConfig(
+        level=logging.INFO if verbose else logging.WARNING,
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+    gateway = Bridge(host, port, ws_host=ws_host, ws_port=ws_port, lsl=lsl)
+
+    def ready() -> None:
+        typer.echo(
+            f"Bridge: MQTT {host}:{port} <-> ws://{ws_host}:{gateway.ws_port}"
+            + (" -> LSL openmind-markers" if lsl else "")
+            + ". Ctrl+C to stop."
+        )
+
+    try:
+        asyncio.run(gateway.run(on_ready=ready))
+    except BrokerUnavailableError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+    except KeyboardInterrupt:
+        typer.echo("Bridge stopped.")
+
+
 if __name__ == "__main__":  # pragma: no cover
     app()

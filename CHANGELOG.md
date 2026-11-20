@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Gateway `openmind-sandbox bridge`: relays every valid protocol message from
+  MQTT to WebSocket clients (`ws://127.0.0.1:8765`), drops and logs invalid
+  ones, accepts markers and events from clients (validated, `v` and `ts`
+  filled in), publishes them on MQTT and pushes markers on the LSL stream
+  `openmind-markers` (back-dated by their transit delay). Clients are told
+  when the broker link is lost. See `docs/bridge.md`.
 - `config/robot.yaml` 1.0.0: kinematics and safety parameters shared by the
   firmware, the Godot twin and the mock robot, validated by `RobotConfig`
   (unknown keys and other major versions refused). See `docs/robot-config.md`.

@@ -37,7 +37,7 @@ Pre-alpha: usable without hardware for command-side work. See [CHANGELOG.md](CHA
 | Local MQTT broker (Mosquitto, Docker) | available |
 | Keyboard command simulator and fake band power (`keys`) | available |
 | `robot.yaml` and mock robot (`mock-robot`) | available |
-| MQTT ↔ WebSocket ↔ LSL gateway (`bridge`) | planned |
+| MQTT ↔ WebSocket ↔ LSL gateway (`bridge`) | available |
 | Godot cockpit: robot twin, bird, wheelchair, live 3D brain | planned |
 | ESP32 robot firmware | planned |
 | Adapter template for your own object | planned |
@@ -83,8 +83,15 @@ simulator and the robot stops within 2 s:
 uv run openmind-sandbox mock-robot
 ```
 
+For the Godot cockpit and other WebSocket clients, start the gateway
+(WebSocket on `ws://127.0.0.1:8765`, scene markers also published on LSL):
+
+```bash
+uv run openmind-sandbox bridge
+```
+
 Details: [keyboard simulator](docs/keys.md), [objects and mock robot](docs/objects.md),
-[robot configuration](docs/robot-config.md).
+[robot configuration](docs/robot-config.md), [bridge](docs/bridge.md).
 
 ## Data and privacy
 
