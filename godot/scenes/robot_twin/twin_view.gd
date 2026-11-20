@@ -7,6 +7,8 @@ const TRAIL_LENGTH := 600
 var robot: TwinRobot
 var course: TwinCourse
 var trail: PackedVector2Array = []
+## Small map over the 3D view: translucent background, thin margin.
+var minimap := false
 
 var _scale := 100.0
 var _origin := Vector2.ZERO
@@ -29,7 +31,9 @@ func to_screen(point: Vector2) -> Vector2:
 func _draw() -> void:
 	if robot == null or course == null:
 		return
-	var margin := 24.0
+	var margin := 6.0 if minimap else 24.0
+	if minimap:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(OpenMindTheme.BACKGROUND, 0.75))
 	_scale = minf((size.x - 2 * margin) / course.arena.x, (size.y - 2 * margin) / course.arena.y)
 	_origin = (size - course.arena * _scale) / 2.0
 	draw_rect(Rect2(_origin, course.arena * _scale), OpenMindTheme.PANEL)

@@ -141,6 +141,13 @@ func _recolor() -> void:
 	_since_recolor = 0.0
 	_instance.mesh = mesh.build(colors.colorize(values) if not colors.labels.is_empty()
 			else PackedColorArray())
+	_render()
+
+
+## Draw the 3D view once: it is only redrawn when colours or the view change.
+func _render() -> void:
+	if viewport != null:
+		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
 func _build_viewport() -> void:
@@ -153,6 +160,7 @@ func _build_viewport() -> void:
 	viewport.own_world_3d = true
 	viewport.transparent_bg = true
 	viewport.msaa_3d = Viewport.MSAA_2X
+	viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 	container.add_child(viewport)
 
 	var world := Node3D.new()
@@ -176,8 +184,8 @@ func _build_viewport() -> void:
 	world.add_child(fill)
 	var environment := Environment.new()
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.75, 0.78, 0.85)
-	environment.ambient_light_energy = 1.2
+	environment.ambient_light_color = Color(0.7, 0.73, 0.8)
+	environment.ambient_light_energy = 0.7
 	environment.background_mode = Environment.BG_CLEAR_COLOR
 	var world_env := WorldEnvironment.new()
 	world_env.environment = environment
@@ -213,7 +221,8 @@ func _build_controls() -> void:
 	labels.custom_minimum_size = Vector2(0, OpenMindTheme.MIN_TARGET)
 	labels.toggled.connect(func(on: bool) -> void:
 			show_electrodes = on
-			_markers.visible = on)
+			_markers.visible = on
+			_render())
 	add_child(labels)
 
 
@@ -228,6 +237,7 @@ func _on_view_input(event: InputEvent) -> void:
 func _update_camera() -> void:
 	if _pivot != null:
 		_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
+		_render()
 
 
 func _load_positions() -> Dictionary:

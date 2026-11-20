@@ -25,6 +25,7 @@ func _run() -> void:
 	_om.disconnect_from_bridge()
 	_om.clock = func() -> float: return _now
 	ObjectController.settings_path = "user://openmind_tests.cfg"
+	GraphicsQuality.settings_path = "user://openmind_tests.cfg"
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(ObjectController.settings_path))
 
 	test_command_gate()
@@ -619,6 +620,12 @@ func test_cockpit() -> void:
 	_command("right", 0.9, 0)  # decoder restarted: seq from 0
 	check(scene.last_command == "right", "seq restart accepted after a silence")
 
+	main.set_quality(GraphicsQuality.LIGHT)
+	check(Engine.max_fps == 30 and is_equal_approx(main.viewport.scaling_3d_scale, 0.75),
+			"light graphics: 30 fps, 3D at 75 %")
+	check(GraphicsQuality.load_saved() == GraphicsQuality.LIGHT, "graphics choice remembered")
+	main.set_quality(GraphicsQuality.REALISTIC)
+	check(Engine.max_fps == 60, "realistic graphics: 60 fps")
 	main.set_panels_visible(false)
 	check(not main.panels.visible, "panels can be hidden")
 	main.queue_free()

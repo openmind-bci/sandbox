@@ -25,6 +25,7 @@ var _openmind: Node = null
 
 @onready var _controller: ObjectController = $ObjectController
 @onready var _view: TwinView = $TwinView
+@onready var _world: TwinWorld = $TwinWorld
 @onready var _status: Label = %Status
 @onready var _progress: Label = %Progress
 
@@ -43,6 +44,8 @@ func _ready() -> void:
 	robot.obstacles = course.obstacles
 	_view.robot = robot
 	_view.course = course
+	_view.minimap = true
+	_world.setup(robot, course)
 	restart()
 	_controller.command_accepted.connect(_on_command)
 	_controller.command_refused.connect(_on_refused)
@@ -78,11 +81,25 @@ func _physics_process(delta: float) -> void:
 	_refresh_hud()
 
 
+func _process(delta: float) -> void:
+	_world.update(delta)
+
+
+func apply_quality(quality: String) -> void:
+	_world.apply_quality(quality)
+
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
-	if key != null and key.pressed and not key.echo and key.keycode == KEY_R:
+	if key == null or not key.pressed or key.echo:
+		return
+	if key.keycode == KEY_R:
 		restart()
-		get_viewport().set_input_as_handled()
+	elif key.keycode == KEY_C:
+		_world.cycle_camera()
+	else:
+		return
+	get_viewport().set_input_as_handled()
 
 
 func _on_command(command: Dictionary) -> void:
@@ -114,5 +131,5 @@ func _refresh_hud() -> void:
 		robot.state, reason, robot.command, robot.speed, distance]
 	var target := "finished" if course.finished else "waypoint %d / %d" % [
 		course.next_index + 1, course.waypoints.size()]
-	_progress.text = "%s · %.1f s · errors %d · collisions avoided %d · R: restart" % [
+	_progress.text = "%s · %.1f s · errors %d · collisions avoided %d · R: restart · C: camera" % [
 		target, course.elapsed, course.errors, robot.collisions_avoided]

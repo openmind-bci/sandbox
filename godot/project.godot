@@ -13,13 +13,15 @@ config_version=5
 config/name="OpenMind Sandbox"
 config/description="Cockpit of OpenMind BCI: objects driven by decoded commands."
 run/main_scene="res://app/main.tscn"
-config/features=PackedStringArray("4.5", "GL Compatibility")
+config/features=PackedStringArray("4.5", "Forward Plus")
 
 [autoload]
 
 OpenMind="*res://addons/openmind/openmind.gd"
 
 [display]
+
+window/vsync/vsync_mode=1
 
 window/size/viewport_width=1280
 window/size/viewport_height=760
@@ -28,5 +30,5 @@ window/stretch/aspect="expand"
 
 [rendering]
 
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method="forward_plus"
+renderer/rendering_method.mobile="mobile"

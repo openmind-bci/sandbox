@@ -26,9 +26,13 @@ enum MenuId {
 	SETTINGS_PANELS = 402,
 	SETTINGS_FULLSCREEN = 403,
 	SETTINGS_QUIT = 404,
+	SETTINGS_REALISTIC = 405,
+	SETTINGS_LIGHT = 406,
 }
 
 var current_scene_id := ""
+## Graphics quality: GraphicsQuality.REALISTIC or LIGHT.
+var quality := GraphicsQuality.REALISTIC
 var current_scene: Node = null
 var viewport: SubViewport
 var panels: Control
@@ -40,6 +44,7 @@ var score_panel: ScorePanel
 
 var _theme: Theme
 var _profile_menu: PopupMenu
+var _settings_menu: PopupMenu
 var _bridge_dialog: ConfirmationDialog
 var _bridge_edit: LineEdit
 var _openmind: Node = null
@@ -51,6 +56,7 @@ func _ready() -> void:
 	_openmind = get_node_or_null("/root/OpenMind")
 	_build_layout()
 	_build_dialogs()
+	set_quality(GraphicsQuality.load_saved(), false)
 	if _openmind != null:
 		_openmind.status_changed.connect(_on_status)
 	switch_scene(DEFAULT_SCENE)
@@ -71,11 +77,28 @@ func switch_scene(scene_id: String) -> bool:
 	if current_scene is Control:
 		current_scene.theme = _theme  # themes do not cross the SubViewport
 	viewport.add_child(current_scene)
+	if current_scene.has_method("apply_quality"):
+		current_scene.apply_quality(quality)
 	current_scene_id = scene_id
 	command_panel.bind_controller(current_scene.get_node_or_null("ObjectController"))
 	get_window().title = "OpenMind Sandbox — %s" % SCENES[scene_id][0]
 	scene_changed.emit(scene_id)
 	return true
+
+
+## Switch between realistic and light graphics (remembered when [param save]).
+func set_quality(new_quality: String, save: bool = true) -> void:
+	quality = new_quality
+	GraphicsQuality.apply_engine(quality, viewport)
+	if current_scene != null and current_scene.has_method("apply_quality"):
+		current_scene.apply_quality(quality)
+	if _settings_menu != null:
+		_settings_menu.set_item_checked(
+				_settings_menu.get_item_index(MenuId.SETTINGS_REALISTIC), quality == GraphicsQuality.REALISTIC)
+		_settings_menu.set_item_checked(
+				_settings_menu.get_item_index(MenuId.SETTINGS_LIGHT), quality == GraphicsQuality.LIGHT)
+	if save:
+		GraphicsQuality.save(quality)
 
 
 func set_panels_visible(value: bool) -> void:
@@ -107,6 +130,7 @@ func _build_layout() -> void:
 	container.size_flags_stretch_ratio = 2.6
 	split.add_child(container)
 	viewport = SubViewport.new()
+	viewport.own_world_3d = true
 	viewport.handle_input_locally = true
 	viewport.transparent_bg = true  # scenes are drawn over the cockpit background
 	container.add_child(viewport)
@@ -170,6 +194,11 @@ func _build_menu_bar() -> MenuBar:
 		index += 1
 
 	var settings := _menu(bar, "Settings")
+	_settings_menu = settings
+	settings.add_radio_check_item("Graphics: realistic", MenuId.SETTINGS_REALISTIC)
+	settings.add_radio_check_item("Graphics: light (while the decoder trains)",
+			MenuId.SETTINGS_LIGHT)
+	settings.add_separator()
 	settings.add_item("Bridge address…", MenuId.SETTINGS_BRIDGE)
 	settings.add_item("Reconnect to the bridge", MenuId.SETTINGS_RECONNECT)
 	settings.add_item("Show / hide panels", MenuId.SETTINGS_PANELS, KEY_MASK_CTRL | KEY_P)
@@ -218,6 +247,10 @@ func _on_menu(id: int) -> void:
 		MenuId.SETTINGS_RECONNECT:
 			if _openmind != null:
 				_openmind.connect_to(_openmind.url)
+		MenuId.SETTINGS_REALISTIC:
+			set_quality(GraphicsQuality.REALISTIC)
+		MenuId.SETTINGS_LIGHT:
+			set_quality(GraphicsQuality.LIGHT)
 		MenuId.SETTINGS_PANELS:
 			set_panels_visible(not panels.visible)
 		MenuId.SETTINGS_FULLSCREEN:
