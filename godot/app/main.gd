@@ -108,6 +108,7 @@ func _build_layout() -> void:
 	split.add_child(container)
 	viewport = SubViewport.new()
 	viewport.handle_input_locally = true
+	viewport.transparent_bg = true  # scenes are drawn over the cockpit background
 	container.add_child(viewport)
 
 	var scroll := ScrollContainer.new()
@@ -149,6 +150,9 @@ func _fold(title: String, content: Control) -> FoldableContainer:
 func _build_menu_bar() -> MenuBar:
 	var bar := MenuBar.new()
 	bar.custom_minimum_size = Vector2(0, OpenMindTheme.MIN_TARGET)
+	# Keep the menus in the window on every platform (macOS would move them to
+	# the system menu bar, away from the keyboard navigation of the cockpit).
+	bar.prefer_global_menu = false
 
 	_profile_menu = _menu(bar, "Profile")
 	_profile_menu.add_item("User: — (from the decoder)", MenuId.PROFILE_INFO)

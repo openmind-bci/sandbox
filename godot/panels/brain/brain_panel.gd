@@ -110,7 +110,9 @@ func _prepare(channels: Array) -> void:
 	for c in channels:
 		var label := str(c["label"])
 		if positions.has(label):
-			used[label] = positions[label]
+			# Electrodes sit on the scalp, 15-27 mm above the cortex: weigh the
+			# surface from the point of the cortex under each electrode.
+			used[label] = mesh.project(positions[label])
 	colors.prepare(mesh.vertices, used)
 	for child in _markers.get_children():
 		child.queue_free()
@@ -120,11 +122,11 @@ func _prepare(channels: Array) -> void:
 		sphere.radius = 0.003
 		sphere.height = 0.006
 		marker.mesh = sphere
-		marker.position = BrainMesh.to_godot(mesh.project(used[label]) * 1.0)
+		marker.position = BrainMesh.to_godot(used[label])
 		var text := Label3D.new()
 		text.text = label
-		text.font_size = 40
-		text.pixel_size = 0.0004
+		text.font_size = 32
+		text.pixel_size = 0.00022
 		text.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		text.no_depth_test = true
 		text.position = Vector3(0, 0.008, 0)
@@ -174,7 +176,8 @@ func _build_viewport() -> void:
 	world.add_child(fill)
 	var environment := Environment.new()
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.55, 0.58, 0.65)
+	environment.ambient_light_color = Color(0.75, 0.78, 0.85)
+	environment.ambient_light_energy = 1.2
 	environment.background_mode = Environment.BG_CLEAR_COLOR
 	var world_env := WorldEnvironment.new()
 	world_env.environment = environment
@@ -184,7 +187,7 @@ func _build_viewport() -> void:
 	_pivot.position = BrainMesh.to_godot(mesh.centre)
 	world.add_child(_pivot)
 	_camera = Camera3D.new()
-	_camera.position = Vector3(0, 0, 0.36)
+	_camera.position = Vector3(0, 0, 0.26)
 	_camera.fov = 40.0
 	_pivot.add_child(_camera)
 
