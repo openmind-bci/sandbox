@@ -37,6 +37,11 @@ const WING_FOLD: Array[float] = [0.0, 0.0, 0.9, 0.9, 0.6, 0.6, 0.3, 0.3]
 const FOLD_AXIS := Vector3(0, 0, 1)
 ## Wing beat: frequency (Hz) and amplitude (radians), cruising and climbing.
 const BEAT_HZ := Vector2(2.0, 3.0)
+## Clouds below the bird: number of small clusters, the half size of the area
+## they loop over (metres), and their height band under the bird.
+const CLOUD_CLUSTERS := 12
+const CLOUD_AREA := 60.0
+const CLOUD_DEPTH := Vector2(7.0, 15.0)
 const BEAT_AMPLITUDE := Vector2(0.45, 0.65)
 ## Local axis of the wing bones around which the wings beat.
 const WING_AXIS := Vector3(0, 1, 0)
@@ -48,6 +53,8 @@ var _skeleton: Skeleton3D
 var _wing_bones: Array[int] = []
 var _wing_rest: Array[Quaternion] = []
 var _wing_index: Array[int] = []  # index in WING_BONES of each found bone
+var _clouds: Array[Node3D] = []
+var _cloud_base: Array[Vector3] = []
 var _beat_phase := 0.0
 var _beat_hz := BEAT_HZ.x
 var _beat_amplitude := BEAT_AMPLITUDE.x
@@ -74,6 +81,7 @@ func setup() -> void:
 			tile.material_override = material
 			tile.position = Vector3(dx * TILE, 0, dz * TILE)
 			_terrain.add_child(tile)
+	_build_clouds()
 	_build_bird()
 	camera = Camera3D.new()
 	camera.fov = 60.0
@@ -99,6 +107,13 @@ func update(scroll: Vector2, bank: float, flap: float, delta: float,
 	_terrain.position = Vector3(fposmod(offset.x + TILE / 2.0, TILE) - TILE / 2.0,
 			offset.y, offset.z)
 	_bird.rotation = Vector3(0, 0, -bank)
+	# Clouds move with the landscape; being closer, they pass faster: they show
+	# that the bird moves forward. Each loops over the area around the bird.
+	for i in _clouds.size():
+		var p := _cloud_base[i] + Vector3(offset.x, offset.y * 0.6, _forward)
+		p.x = wrapf(p.x, -CLOUD_AREA, CLOUD_AREA)
+		p.z = wrapf(p.z, -CLOUD_AREA * 1.6, CLOUD_AREA * 0.4)
+		_clouds[i].position = p
 	if _animation != null:
 		# Quick wing beats while climbing, slow ones while gliding.
 		_animation.speed_scale = 1.6 if flapping else 0.35
@@ -124,6 +139,42 @@ static func height(x: float, z: float) -> float:
 	var k := TAU / TILE
 	return 7.0 * sin(2.0 * k * x) * cos(k * z) + 3.0 * sin(5.0 * k * (x + z)) \
 			+ 1.5 * cos(9.0 * k * x - 4.0 * k * z) - 4.0
+
+
+## A few soft clusters of billboard puffs, sparse, below the bird.
+func _build_clouds() -> void:
+	var puff := GradientTexture2D.new()
+	puff.width = 128
+	puff.height = 128
+	puff.fill = GradientTexture2D.FILL_RADIAL
+	puff.fill_from = Vector2(0.5, 0.5)
+	puff.fill_to = Vector2(1.0, 0.5)
+	var gradient := Gradient.new()
+	gradient.set_color(0, Color(1, 1, 1, 0.85))
+	gradient.set_color(1, Color(1, 1, 1, 0.0))
+	gradient.add_point(0.55, Color(1, 1, 1, 0.45))
+	puff.gradient = gradient
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 11
+	for i in CLOUD_CLUSTERS:
+		var cluster := Node3D.new()
+		add_child(cluster)
+		for k in rng.randi_range(3, 6):
+			var sprite := Sprite3D.new()
+			sprite.texture = puff
+			sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			sprite.shaded = false
+			sprite.double_sided = true
+			sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
+			sprite.pixel_size = rng.randf_range(0.05, 0.11)
+			sprite.modulate = Color(1, 1, 1, rng.randf_range(0.55, 0.85))
+			sprite.position = Vector3(rng.randf_range(-6, 6), rng.randf_range(-1, 1.5),
+					rng.randf_range(-5, 5))
+			cluster.add_child(sprite)
+		_clouds.append(cluster)
+		_cloud_base.append(Vector3(rng.randf_range(-CLOUD_AREA, CLOUD_AREA),
+				BIRD_HEIGHT - rng.randf_range(CLOUD_DEPTH.x, CLOUD_DEPTH.y),
+				rng.randf_range(-CLOUD_AREA * 1.6, CLOUD_AREA * 0.4)))
 
 
 func _terrain_mesh() -> ArrayMesh:
