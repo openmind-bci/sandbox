@@ -492,17 +492,18 @@ func test_brain() -> void:
 	var painted := colors.colorize({"C3": 0.0, "C4": -0.5})
 	var under_c4 := painted[_nearest_vertex(mesh, mesh.project(c4))]
 	var under_c3 := painted[_nearest_vertex(mesh, mesh.project(c3))]
-	check(under_c4.b > under_c4.r + 0.2, "desynchronization on C4 is blue")
-	check(under_c3.is_equal_approx(BrainColors.ZERO) or absf(under_c3.r - under_c3.b) < 0.1,
-			"C3 at baseline stays neutral")
-	painted = colors.colorize({"C3": 0.4, "C4": null})
+	check(under_c4.r > under_c4.b + 0.3 and under_c4.a > 0.6, "strong change on C4: opaque red")
+	check(under_c3.a < 0.05, "C3 at baseline: no blob, the cortex shows")
+	painted = colors.colorize({"C3": 0.14, "C4": null})
 	under_c4 = painted[_nearest_vertex(mesh, mesh.project(c4))]
-	check(absf(under_c4.r - under_c4.g) < 0.06 and absf(under_c4.g - under_c4.b) < 0.06,
-			"electrode not OK is grey")
+	check(absf(under_c4.r - under_c4.g) < 0.06 and absf(under_c4.g - under_c4.b) < 0.06
+			and under_c4.a > 0.3, "electrode not OK: dark grey")
 	under_c3 = painted[_nearest_vertex(mesh, mesh.project(c3))]
-	check(under_c3.r > under_c3.b + 0.2, "increase on C3 is orange")
+	check(under_c3.b > under_c3.r and under_c3.a > 0.05, "weak change on C3: translucent blue")
 	var back := painted[_nearest_vertex(mesh, Vector3(0, -0.09, 0.0))]
-	check(back.is_equal_approx(BrainColors.BASE), "far from electrodes: base colour")
+	check(back.a == 0.0, "far from electrodes: no blob")
+	check(BrainColors.heat(0.0).b > BrainColors.heat(0.0).r
+			and BrainColors.heat(1.0).r > BrainColors.heat(1.0).b, "scale goes from blue to red")
 
 	var panel := BrainPanel.new()
 	root.add_child(panel)

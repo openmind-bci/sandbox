@@ -1,23 +1,27 @@
 class_name BrainColors
 extends RefCounted
-## Sensor-level colouring of the brain surface from band power messages.
+## Sensor-level colouring of the brain surface from band power messages, in the
+## style of a functional scan: a grey cortex with coloured blobs on top.
 ##
 ## Each vertex takes a distance-weighted mean of the electrodes around it
-## (Gaussian weights, [member sigma]); far from every electrode it keeps the
-## neutral base colour. Values are relative changes (rel_mu or rel_beta) shown on
-## a diverging blue / orange scale: blue = decrease (desynchronization), orange =
-## increase. Electrodes reported ok=false grey out their area.
+## (Gaussian weights, [member sigma]). The strength of the change (|rel_mu| or
+## |rel_beta|) is shown from blue (weak) through cyan, green and yellow to red
+## (strong); below [member threshold] the cortex stays grey. The vertex alpha is
+## the opacity of the blob over the cortex, so the shape of the brain always
+## shows. Electrodes reported ok=false shade their area in neutral grey.
 
-const BASE := Color("#5E6779")
-const ZERO := Color("#A9B1C0")
-const DECREASE := Color("#1747D6")
-const INCREASE := Color("#F07D14")
-const BAD := Color("#8A8F99")
+const BASE := Color("#8C93A0")
+const BAD := Color("#6B7079")
+## Scanner colour scale, weak to strong.
+const SCALE: Array[Color] = [Color("#2B4CFF"), Color("#18C8F0"), Color("#38D46A"),
+	Color("#F4E23A"), Color("#F0331E")]
 
 ## Width of the influence of an electrode, in metres.
-var sigma := 0.036
+var sigma := 0.03
 ## |value| shown with the full colour.
-var vmax := 0.32
+var vmax := 0.4
+## Share of [member vmax] under which nothing is coloured.
+var threshold := 0.12
 
 ## Weights below this are dropped (sparse weights: much faster colouring).
 const MIN_WEIGHT := 0.01
@@ -79,21 +83,25 @@ func colorize(values: Dictionary) -> PackedColorArray:
 			elif kind[i] == 2:
 				bad += weights[j]
 		if good + bad <= 1e-6:
-			colors[k] = BASE
+			colors[k] = Color(BASE, 0.0)
 			continue
 		var mean := total / good if good > 1e-6 else 0.0
-		var colour := diverging(mean) if good > 1e-6 else BASE
-		if bad > 1e-6:
-			colour = colour.lerp(BAD, bad / (good + bad))
 		var coverage := clampf(1.6 * (good + bad), 0.0, 1.0)
-		colour = BASE.lerp(colour, coverage)
-		# Alpha carries the activity strength: it makes active areas glow.
-		var strength := clampf(absf(mean) / vmax, 0.0, 1.0) * coverage
-		colour.a = strength * good / (good + bad)
+		var strength := clampf(absf(mean) / vmax, 0.0, 1.0) * coverage * good / (good + bad)
+		var colour := Color(BASE, 0.0)
+		if strength > threshold:
+			colour = heat(strength)
+			# Opacity rises smoothly from the threshold, never hiding the cortex.
+			colour.a = 0.85 * smoothstep(threshold, threshold + 0.25, strength)
+		if bad > 1e-6:
+			var share := bad / (good + bad)
+			colour = Color(colour.lerp(BAD, share), maxf(colour.a, 0.7 * share * coverage))
 		colors[k] = colour
 	return colors
 
 
-func diverging(v: float) -> Color:
-	var t := clampf(v / vmax, -1.0, 1.0)
-	return ZERO.lerp(DECREASE, -t) if t < 0.0 else ZERO.lerp(INCREASE, t)
+## Colour of a strength between 0 and 1 on the scanner scale (blue to red).
+static func heat(strength: float) -> Color:
+	var t := clampf(strength, 0.0, 1.0) * (SCALE.size() - 1)
+	var i := mini(int(t), SCALE.size() - 2)
+	return SCALE[i].lerp(SCALE[i + 1], t - i)

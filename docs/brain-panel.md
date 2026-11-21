@@ -10,16 +10,19 @@ the band power messages (`openmind/v1/bandpower`, about 10 Hz).
 
 ## Reading it
 
+The surface is drawn like a functional scan: a grey cortex (its folds stay
+visible) with coloured blobs where the band power changes.
+
 | Colour | Meaning |
 |---|---|
-| blue | `rel_mu` (or `rel_beta`) below the resting baseline: desynchronization, expected over the motor area of an imagined movement |
-| light | no change |
-| orange | above the baseline (for example beta during a jaw clench) |
-| grey | electrode reported `ok: false` (absent, flat or saturated) |
-| dark blue-grey | no electrode nearby |
+| grey cortex | no notable change (below 12 % of the scale) |
+| blue → cyan → green → yellow → red | strength of the change at the sensors, from weak to strong (`|rel_mu|` or `|rel_beta|`, full red at 0.4) |
+| dark grey | electrode reported `ok: false` (absent, flat or saturated) |
 
-The scale is diverging and saturates at ±0.32; active areas glow, and a soft halo (glow) blurs them. Imagining the left hand should turn
-the area of **C4** blue, the right hand **C3**, both feet **Cz / CPz**.
+The colour shows the **strength** of the change, not its direction: imagining a
+movement lowers mu (desynchronization), a jaw clench raises beta, and both light
+up. Imagining the left hand should light the area of **C4**, the right hand
+**C3**, both feet **Cz / CPz**.
 
 Controls: drag to rotate, **Top / Left / Right** views, **mu / beta** band,
 **Electrodes** to show their positions and names, **Enlarge ⤢** to open the same
@@ -82,7 +85,7 @@ the head (skull and scalp).
   MNE 10-05 template montage (`colin27_1005`, formerly `standard_1005`) by `tools/generate_electrodes.py`
   (`uv run --with "mne>=1.7" python tools/generate_electrodes.py`). Positions are
   in the MNE head frame and match OpenMind Plug.
-- **Colouring** (`brain_colors.gd`): Gaussian weights (σ = 36 mm) from every
+- **Colouring** (`brain_colors.gd`): Gaussian weights (σ = 30 mm) from every
   electrode of the message to every vertex, precomputed once per montage and kept
   only above 1 % (about 3 ms per update for fsaverage); the surface is
   recoloured at most 20 times per second.

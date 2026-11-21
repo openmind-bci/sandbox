@@ -5,8 +5,9 @@ extends VBoxContainer
 ## beta band; electrode names on demand.
 
 const ELECTRODES_PATH := "res://data/electrodes_10_10.json"
-const LEGEND := "Blue: decrease (desynchronization) · orange: increase · grey: electrode " \
-		+ "not OK.\nActivity estimated at the sensors: this is not a source localisation."
+const LEGEND := "Colour: strength of the change at the sensors, blue (weak) to red " \
+		+ "(strong); dark grey: electrode not OK.\nActivity estimated at the sensors: " \
+		+ "this is not a source localisation."
 ## Time constant of the colour transitions, in seconds.
 const SMOOTHING_S := 0.25
 ## Largest colouring rate (the fsaverage mesh has about 20,000 vertices).
@@ -182,7 +183,7 @@ func _build_viewport() -> void:
 
 	var world := Node3D.new()
 	viewport.add_child(world)
-	# Vertex colours (sRGB) with the activity strength in alpha: active areas glow.
+	# Scanner style: grey cortex, coloured blobs (vertex colour, opacity in alpha).
 	var material := ShaderMaterial.new()
 	material.shader = load("res://panels/brain/brain_surface.gdshader")
 	_instance = MeshInstance3D.new()
@@ -202,16 +203,8 @@ func _build_viewport() -> void:
 	var environment := Environment.new()
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color(0.7, 0.73, 0.8)
-	environment.ambient_light_energy = 0.5
+	environment.ambient_light_energy = 0.45
 	environment.background_mode = Environment.BG_CLEAR_COLOR
-	# Glow blurs the glowing active areas into soft halos.
-	environment.glow_enabled = true
-	environment.glow_intensity = 1.2
-	environment.glow_bloom = 0.0  # only the glowing (active) areas get a halo
-	environment.glow_hdr_threshold = 0.9
-	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
-	environment.set_glow_level(2, 1.0)
-	environment.set_glow_level(4, 1.0)
 	var world_env := WorldEnvironment.new()
 	world_env.environment = environment
 	world.add_child(world_env)
