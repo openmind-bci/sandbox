@@ -8,16 +8,16 @@ extends RefCounted
 ## a diverging blue / orange scale: blue = decrease (desynchronization), orange =
 ## increase. Electrodes reported ok=false grey out their area.
 
-const BASE := Color("#5A6378")
-const ZERO := Color("#E9ECF2")
-const DECREASE := Color("#2F6FDF")
-const INCREASE := Color("#E8892B")
+const BASE := Color("#5E6779")
+const ZERO := Color("#A9B1C0")
+const DECREASE := Color("#1747D6")
+const INCREASE := Color("#F07D14")
 const BAD := Color("#8A8F99")
 
 ## Width of the influence of an electrode, in metres.
-var sigma := 0.024
+var sigma := 0.03
 ## |value| shown with the full colour.
-var vmax := 0.5
+var vmax := 0.4
 
 ## Weights below this are dropped (sparse weights: much faster colouring).
 const MIN_WEIGHT := 0.01

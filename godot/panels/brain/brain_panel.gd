@@ -11,6 +11,8 @@ const LEGEND := "Blue: decrease (desynchronization) · orange: increase · grey:
 const SMOOTHING_S := 0.25
 ## Largest colouring rate (the fsaverage mesh has about 20,000 vertices).
 const MAX_RECOLOR_HZ := 20.0
+## Longest time without redrawing the 3D view (it may be cleared by a relayout).
+const SAFETY_RENDER_S := 0.5
 const VIEWS := {"Top": Vector2(0.0, -1.45), "Left": Vector2(-PI / 2.0, -0.2),
 	"Right": Vector2(PI / 2.0, -0.2)}
 
@@ -36,6 +38,7 @@ var _yaw := 0.0
 var _pitch := -0.6
 var _dirty := true
 var _since_recolor := 0.0
+var _since_render := 0.0
 var _channels_key := ""
 
 
@@ -101,6 +104,9 @@ func _process(delta: float) -> void:
 			values[label] = next
 			_dirty = true
 	_since_recolor += delta
+	_since_render += delta
+	if _since_render >= SAFETY_RENDER_S:
+		_render()
 	if _dirty and _since_recolor >= 1.0 / MAX_RECOLOR_HZ:
 		_recolor()
 
@@ -144,8 +150,10 @@ func _recolor() -> void:
 	_render()
 
 
-## Draw the 3D view once: it is only redrawn when colours or the view change.
+## Draw the 3D view once: it is redrawn when colours, the view or the panel size
+## change, and at least every SAFETY_RENDER_S seconds.
 func _render() -> void:
+	_since_render = 0.0
 	if viewport != null:
 		viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
@@ -155,6 +163,9 @@ func _build_viewport() -> void:
 	container.stretch = true
 	container.custom_minimum_size = Vector2(300, 260)
 	container.gui_input.connect(_on_view_input)
+	# A resized or re-shown viewport loses its image: draw it again.
+	container.resized.connect(_render)
+	container.visibility_changed.connect(_render)
 	add_child(container)
 	viewport = SubViewport.new()
 	viewport.own_world_3d = true
@@ -167,6 +178,8 @@ func _build_viewport() -> void:
 	viewport.add_child(world)
 	var material := StandardMaterial3D.new()
 	material.vertex_color_use_as_albedo = true
+	material.vertex_color_is_srgb = true  # colours are given in sRGB: do not wash them out
+	material.metallic_specular = 0.2
 	material.roughness = 0.85
 	material.cull_mode = BaseMaterial3D.CULL_DISABLED  # winding differs between sources
 	_instance = MeshInstance3D.new()
@@ -177,15 +190,16 @@ func _build_viewport() -> void:
 	world.add_child(_markers)
 	var key := DirectionalLight3D.new()
 	key.rotation = Vector3(-0.9, 0.5, 0.0)
+	key.light_energy = 0.75
 	world.add_child(key)
 	var fill := DirectionalLight3D.new()
 	fill.rotation = Vector3(0.6, PI + 0.4, 0.0)
-	fill.light_energy = 0.45
+	fill.light_energy = 0.3
 	world.add_child(fill)
 	var environment := Environment.new()
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = Color(0.7, 0.73, 0.8)
-	environment.ambient_light_energy = 0.7
+	environment.ambient_light_energy = 0.5
 	environment.background_mode = Environment.BG_CLEAR_COLOR
 	var world_env := WorldEnvironment.new()
 	world_env.environment = environment
