@@ -609,7 +609,7 @@ func test_3d_worlds() -> void:
 
 
 func _boat() -> BoatModel:
-	var course := TwinCourse.from_file("res://data/courses/boat_lake.json")
+	var course := TwinCourse.from_file("res://data/courses/boat_sea.json")
 	var boat := BoatModel.from_course(course)
 	boat.resume()
 	return boat
@@ -642,12 +642,13 @@ func test_boat() -> void:
 	check(boat.state == BoatModel.ANCHORED and boat.position.is_equal_approx(anchored_at),
 			"anchor: the boat stops and does not drift")
 	boat = _boat()
-	boat.place(Vector2(12.0, 27.0), 0.0)  # heading east, towards the first island
+	boat.islands = [Vector3(20.0, 25.0, 4.0)]  # an island straight ahead
 	boat.apply("forward")
 	_sail(boat, 20.0)
 	var island := boat.islands[0]
 	check(boat.bumps == 1 and boat.position.distance_to(Vector2(island.x, island.y))
 			>= island.z + boat.radius - 1e-3, "stops on an island shore, one bump")
+	check(_boat().islands.is_empty(), "the default sea has no island")
 	boat = _boat()
 	boat.heading = PI  # west: open sea, no boundary
 	boat.apply("forward")

@@ -1,7 +1,8 @@
 class_name BoatModel
 extends RefCounted
-## Sailing boat with inertia and drift, at sea (godot/data/courses/boat_lake.json:
-## islands to sail around, buoys to reach; the course area is not a boundary).
+## Sailing boat with inertia and drift, at sea (godot/data/courses/boat_sea.json:
+## buoys to reach in order; the course area is not a boundary). Islands are
+## supported (course obstacles) but the default sea has none.
 ##
 ## forward hoists the sail (the boat speeds up slowly), rest lowers it (the boat
 ## drifts and slows down slowly, pushed by the wind), left / right turn the rudder

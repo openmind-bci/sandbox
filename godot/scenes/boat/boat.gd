@@ -9,7 +9,7 @@ extends Control
 ## C switches the camera.
 
 const OBJECT_NAME := "boat"
-const DEFAULT_COURSE := "res://data/courses/boat_lake.json"
+const DEFAULT_COURSE := "res://data/courses/boat_sea.json"
 const TELEMETRY_PERIOD := 0.5
 
 @export_file("*.json") var course_path := DEFAULT_COURSE

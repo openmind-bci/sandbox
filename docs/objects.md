@@ -67,13 +67,14 @@ Events, with `"object": "robot-twin"`:
 
 ## Boat (Godot)
 
-A small sailing boat on a lake (`scenarios/courses/boat_lake.yaml`: islands and
-four buoys to reach in order), slow and forgiving on purpose: inertia and drift,
+A sailing boat at sea (`scenarios/courses/boat_sea.yaml`: open water to the
+horizon and seven buoys to reach in order, as a slalom), slow and forgiving on purpose: inertia and drift,
 no time pressure. `forward` hoists the sail (the boat speeds up slowly to 3 m/s),
 `rest` lowers it (the boat slows down slowly and the wind pushes it), `left` /
 `right` turn the rudder while held (more effect at speed), `action` drops the
-anchor (the boat stops and stays until the sail is hoisted again). The boat stops
-against the shore and the islands and counts a bump per impact.
+anchor (the boat stops and stays until the sail is hoisted again). There is no
+shore at sea; islands can be added to a course as obstacles (the boat stops
+against them and counts a bump).
 
 Events, with `"object": "boat"`: `telemetry` (position, heading, speed, sail,
 anchor, state), `state`, `start`, `waypoint`, `finish` (`time_s`, `errors`,

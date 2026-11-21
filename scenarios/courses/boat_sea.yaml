@@ -1,0 +1,16 @@
+# Sea course of the boat scene (top view, metres): open water, no island; buoys
+# to reach in order, as a gentle slalom. The arena only sizes the minimap: it is
+# not a boundary at sea.
+name: boat_sea
+title: "Sea: buoy slalom"
+arena: {width: 80.0, height: 50.0}
+start: {x: 6.0, y: 25.0, heading_deg: 0}
+obstacles: []
+waypoints:
+  - {x: 20.0, y: 32.0, radius: 3.0}
+  - {x: 34.0, y: 18.0, radius: 3.0}
+  - {x: 48.0, y: 32.0, radius: 3.0}
+  - {x: 62.0, y: 18.0, radius: 3.0}
+  - {x: 74.0, y: 30.0, radius: 3.0}
+  - {x: 40.0, y: 44.0, radius: 3.0}
+  - {x: 8.0, y: 38.0, radius: 3.0}
