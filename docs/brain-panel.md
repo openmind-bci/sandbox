@@ -18,7 +18,7 @@ the band power messages (`openmind/v1/bandpower`, about 10 Hz).
 | grey | electrode reported `ok: false` (absent, flat or saturated) |
 | dark blue-grey | no electrode nearby |
 
-The scale is diverging and saturates at ±0.4. Imagining the left hand should turn
+The scale is diverging and saturates at ±0.32; active areas glow, and a soft halo (glow) blurs them. Imagining the left hand should turn
 the area of **C4** blue, the right hand **C3**, both feet **Cz / CPz**.
 
 Controls: drag to rotate, **Top / Left / Right** views, **mu / beta** band,
@@ -82,7 +82,7 @@ the head (skull and scalp).
   MNE 10-05 template montage (`colin27_1005`, formerly `standard_1005`) by `tools/generate_electrodes.py`
   (`uv run --with "mne>=1.7" python tools/generate_electrodes.py`). Positions are
   in the MNE head frame and match OpenMind Plug.
-- **Colouring** (`brain_colors.gd`): Gaussian weights (σ = 30 mm) from every
+- **Colouring** (`brain_colors.gd`): Gaussian weights (σ = 36 mm) from every
   electrode of the message to every vertex, precomputed once per montage and kept
   only above 1 % (about 3 ms per update for fsaverage); the surface is
   recoloured at most 20 times per second.

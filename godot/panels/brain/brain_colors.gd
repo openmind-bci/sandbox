@@ -15,9 +15,9 @@ const INCREASE := Color("#F07D14")
 const BAD := Color("#8A8F99")
 
 ## Width of the influence of an electrode, in metres.
-var sigma := 0.03
+var sigma := 0.036
 ## |value| shown with the full colour.
-var vmax := 0.4
+var vmax := 0.32
 
 ## Weights below this are dropped (sparse weights: much faster colouring).
 const MIN_WEIGHT := 0.01
@@ -81,10 +81,16 @@ func colorize(values: Dictionary) -> PackedColorArray:
 		if good + bad <= 1e-6:
 			colors[k] = BASE
 			continue
-		var colour := diverging(total / good) if good > 1e-6 else BASE
+		var mean := total / good if good > 1e-6 else 0.0
+		var colour := diverging(mean) if good > 1e-6 else BASE
 		if bad > 1e-6:
 			colour = colour.lerp(BAD, bad / (good + bad))
-		colors[k] = BASE.lerp(colour, clampf(good + bad, 0.0, 1.0))
+		var coverage := clampf(1.6 * (good + bad), 0.0, 1.0)
+		colour = BASE.lerp(colour, coverage)
+		# Alpha carries the activity strength: it makes active areas glow.
+		var strength := clampf(absf(mean) / vmax, 0.0, 1.0) * coverage
+		colour.a = strength * good / (good + bad)
+		colors[k] = colour
 	return colors
 
 

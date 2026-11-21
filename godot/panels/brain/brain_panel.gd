@@ -182,12 +182,9 @@ func _build_viewport() -> void:
 
 	var world := Node3D.new()
 	viewport.add_child(world)
-	var material := StandardMaterial3D.new()
-	material.vertex_color_use_as_albedo = true
-	material.vertex_color_is_srgb = true  # colours are given in sRGB: do not wash them out
-	material.metallic_specular = 0.2
-	material.roughness = 0.85
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED  # winding differs between sources
+	# Vertex colours (sRGB) with the activity strength in alpha: active areas glow.
+	var material := ShaderMaterial.new()
+	material.shader = load("res://panels/brain/brain_surface.gdshader")
 	_instance = MeshInstance3D.new()
 	_instance.material_override = material
 	world.add_child(_instance)
@@ -207,6 +204,14 @@ func _build_viewport() -> void:
 	environment.ambient_light_color = Color(0.7, 0.73, 0.8)
 	environment.ambient_light_energy = 0.5
 	environment.background_mode = Environment.BG_CLEAR_COLOR
+	# Glow blurs the glowing active areas into soft halos.
+	environment.glow_enabled = true
+	environment.glow_intensity = 1.2
+	environment.glow_bloom = 0.0  # only the glowing (active) areas get a halo
+	environment.glow_hdr_threshold = 0.9
+	environment.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
+	environment.set_glow_level(2, 1.0)
+	environment.set_glow_level(4, 1.0)
 	var world_env := WorldEnvironment.new()
 	world_env.environment = environment
 	world.add_child(world_env)
