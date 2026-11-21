@@ -15,6 +15,7 @@ func _ready() -> void:
 	_openmind = get_node_or_null("/root/OpenMind")
 	if _openmind != null:
 		_openmind.connection_changed.connect(_refresh.unbind(1))
+		_openmind.demo_changed.connect(_refresh.unbind(1))
 		_openmind.bridge_state_changed.connect(_refresh.unbind(1))
 		_openmind.decoder_alive_changed.connect(_refresh.unbind(1))
 	_refresh()
@@ -27,7 +28,9 @@ func _refresh() -> void:
 	var url: String = _openmind.url if _openmind != null else "?"
 	_show(bridge_label, connected, "Bridge: connected" if connected else "Bridge: waiting (%s)" % url)
 	_show(mqtt_label, mqtt, "MQTT broker: connected" if mqtt else "MQTT broker: not connected")
-	_show(decoder_label, alive, "Decoder: alive" if alive else "Decoder: no running status")
+	var demo: bool = _openmind != null and _openmind.demo != null
+	_show(decoder_label, alive, ("Decoder: demo (simulated)" if demo else "Decoder: alive")
+			if alive else "Decoder: no running status")
 
 
 static func _show(label: Label, ok: bool, text: String) -> void:

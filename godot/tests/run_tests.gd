@@ -41,6 +41,7 @@ func _run() -> void:
 	test_chair()
 	await test_3d_worlds()
 	await test_boat()
+	test_demo()
 	await test_brain()
 	await test_signal_panel()
 	await test_cockpit()
@@ -672,6 +673,43 @@ func test_boat() -> void:
 	check(scene.boat.speed > 0.0, "boat scene sails")
 	scene.queue_free()
 	await process_frame
+
+
+func test_demo() -> void:
+	_om.set_connected_for_test(false)
+	check(not _om.decoder_alive, "no decoder before the demo")
+	var commands: Array = []
+	var powers: Array = []
+	var on_command := func(c: Dictionary) -> void: commands.append(c["command"])
+	var on_power := func(b: Dictionary) -> void: powers.append(b)
+	_om.command_received.connect(on_command)
+	_om.bandpower_received.connect(on_power)
+	_om.start_demo()
+	var demo: DemoDriver = _om.demo
+	demo.set_process(false)  # driven by hand below
+	for i in 50:  # 5 s: rest (2 s), then 3 s of left
+		demo.advance(0.1)
+	check(_om.decoder_alive, "the demo makes a live decoder without a bridge")
+	check("left" in commands and "rest" in commands, "the demo sends its commands")
+	var last: Dictionary = powers.back()
+	var rel := {}
+	for c in last["channels"]:
+		rel[c["label"]] = c["rel_mu"]
+	check(rel["C4"] < -0.3 and rel["C4"] < rel["C3"] - 0.2, "left: mu drops over C4")
+	demo.follow = func() -> String: return "forward"
+	for i in 40:
+		demo.advance(0.1)
+	check(commands.back() == "forward", "the demo follows the scene's cue")
+	last = powers.back()
+	for c in last["channels"]:
+		rel[c["label"]] = c["rel_mu"]
+	check(rel["Cz"] < -0.3, "forward: mu drops over Cz")
+	_om.stop_demo()
+	_now += 2.5
+	_om._update_alive()
+	check(not _om.decoder_alive, "objects stop once the demo is stopped")
+	_om.command_received.disconnect(on_command)
+	_om.bandpower_received.disconnect(on_power)
 
 
 func test_theme() -> void:

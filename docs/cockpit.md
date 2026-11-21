@@ -37,6 +37,17 @@ OPENMIND_BRIDGE_URL=ws://127.0.0.1:8781 godot --path godot
 
 or from **Settings → Bridge address…** while it runs.
 
+## Demo mode
+
+**Start demo** in the command panel (or **Settings → Demo mode**, Ctrl+D) runs a
+simulated decoder inside the cockpit: no bridge, no broker, no headset. It sends
+a running status, commands in a loop (rest, left, rest, right, rest, forward,
+action) and band power on the eight motor electrodes of montage C, so that the
+scenes move and the 3D brain lights up: left turns the area of C4 blue, right
+the area of C3, forward Cz / CPz, and action raises beta everywhere (orange). In
+the bird scene the demo follows the calibration cues, like a perfect user. Stop
+it with the same button: the status stops and objects stop within 2 s.
+
 ## Scenes and graphics
 
 The four scenes are drawn in 3D, semi-realistic, with CC0 textures and skies from

@@ -27,6 +27,7 @@ enum MenuId {
 	SETTINGS_FULLSCREEN = 403,
 	SETTINGS_QUIT = 404,
 	SETTINGS_REALISTIC = 405,
+	SETTINGS_DEMO = 407,
 	SETTINGS_LIGHT = 406,
 }
 
@@ -148,6 +149,7 @@ func _build_layout() -> void:
 
 	command_panel = CommandPanel.new()
 	command_panel.name = "CommandPanel"
+	command_panel.demo_follow = _demo_command
 	connection_panel = ConnectionPanel.new()
 	connection_panel.name = "ConnectionPanel"
 	score_panel = ScorePanel.new()
@@ -195,6 +197,8 @@ func _build_menu_bar() -> MenuBar:
 
 	var settings := _menu(bar, "Settings")
 	_settings_menu = settings
+	settings.add_item("Demo mode: simulated decoder and brain", MenuId.SETTINGS_DEMO,
+			KEY_MASK_CTRL | KEY_D)
 	settings.add_radio_check_item("Graphics: realistic", MenuId.SETTINGS_REALISTIC)
 	settings.add_radio_check_item("Graphics: light (while the decoder trains)",
 			MenuId.SETTINGS_LIGHT)
@@ -247,6 +251,8 @@ func _on_menu(id: int) -> void:
 		MenuId.SETTINGS_RECONNECT:
 			if _openmind != null:
 				_openmind.connect_to(_openmind.url)
+		MenuId.SETTINGS_DEMO:
+			command_panel.toggle_demo()
 		MenuId.SETTINGS_REALISTIC:
 			set_quality(GraphicsQuality.REALISTIC)
 		MenuId.SETTINGS_LIGHT:
@@ -267,6 +273,8 @@ func _shortcut_input(event: InputEvent) -> void:
 		return
 	if key.ctrl_pressed and key.keycode >= KEY_1 and key.keycode < KEY_1 + SCENES.size():
 		_on_menu(MenuId.SCENE_BASE + key.keycode - KEY_1)
+	elif key.ctrl_pressed and key.keycode == KEY_D:
+		_on_menu(MenuId.SETTINGS_DEMO)
 	elif key.ctrl_pressed and key.keycode == KEY_P:
 		_on_menu(MenuId.SETTINGS_PANELS)
 	elif key.keycode == KEY_F11:
@@ -282,6 +290,13 @@ func _on_bridge_confirmed() -> void:
 	var address := _bridge_edit.text.strip_edges()
 	if _openmind != null and (address.begins_with("ws://") or address.begins_with("wss://")):
 		_openmind.connect_to(address)
+
+
+## Command the demo should send: the current scene's cue when it has one.
+func _demo_command() -> String:
+	if current_scene != null and current_scene.has_method("demo_command"):
+		return current_scene.demo_command()
+	return ""
 
 
 func _on_status(status: Dictionary) -> void:

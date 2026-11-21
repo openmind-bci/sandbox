@@ -7,6 +7,10 @@ extends VBoxContainer
 var command_label := Label.new()
 var confidence_bar := ProgressBar.new()
 var decoder_label := Label.new()
+## Starts or stops the built-in demo decoder.
+var demo_button := Button.new()
+## Gives the demo the command to send (the scene's cue), or "" for its loop.
+var demo_follow: Callable = Callable()
 ## Slider of each thresholded command.
 var sliders := {}
 
@@ -24,15 +28,33 @@ func _ready() -> void:
 	confidence_bar.custom_minimum_size = Vector2(0, 24)
 	decoder_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	decoder_label.text = "Decoder: no status yet"
+	demo_button.text = "Start demo"
+	demo_button.tooltip_text = "Simulated decoder and brain activity, no headset (Ctrl+D)"
+	demo_button.custom_minimum_size = Vector2(0, OpenMindTheme.MIN_TARGET)
+	demo_button.pressed.connect(toggle_demo)
+	add_child(demo_button)
 	add_child(command_label)
 	add_child(confidence_bar)
 	add_child(decoder_label)
 	_build_thresholds()
 	var openmind := get_node_or_null("/root/OpenMind")
 	if openmind != null:
+		openmind.demo_changed.connect(func(active: bool) -> void:
+				demo_button.text = "Stop demo" if active else "Start demo")
 		openmind.command_received.connect(show_command)
 		openmind.status_changed.connect(show_status)
 		openmind.decoder_alive_changed.connect(_on_alive)
+
+
+## Start the demo decoder, or stop it when it runs.
+func toggle_demo() -> void:
+	var openmind := get_node_or_null("/root/OpenMind")
+	if openmind == null:
+		return
+	if openmind.demo != null:
+		openmind.stop_demo()
+	else:
+		openmind.start_demo(demo_follow)
 
 
 func show_command(command: Dictionary) -> void:

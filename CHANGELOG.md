@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Demo mode in the cockpit (Start demo, Ctrl+D): a built-in simulated decoder
+  sends status, commands and band power without bridge nor headset, so that
+  scenes move and the 3D brain shows the areas of each command; it follows the
+  calibration cues in the bird scene.
+- A neutral mannequin seated in the scanned wheelchair, an 8 m sailing yacht
+  at open sea with a buoy slalom, and a textured shrike for the calibration.
 - Semi-realistic 3D scenes: robot twin (room, posts, waypoint rings, robot
   built from `robot.yaml`), wheelchair (apartment with swinging doors and
   furniture), calm landscape under the calibration bird, and a new **boat**
@@ -82,6 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The 3D brain no longer disappears when the panel is resized or clicked, and
+  its activity colours are no longer washed out.
 - Mock robot: a robot stopped exactly at the obstacle stop distance is reported
   as `SAFETY_STOP` (`obstacle`) instead of `MOVING` at zero speed.
 - Godot 4.5 cockpit (`godot/`): `OpenMind` autoload (WebSocket link to the

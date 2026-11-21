@@ -171,6 +171,14 @@ func _animate(delta: float) -> void:
 	_view.bank = lerpf(_view.bank, bank_target, minf(1.0, 6.0 * delta))
 
 
+## Command a perfect user would give now (used by the demo mode): the cue during
+## imagery, rest during the rest of a trial, "" outside a session.
+func demo_command() -> String:
+	if not running:
+		return ""
+	return protocol.label if protocol.phase == CalibrationProtocol.IMAGERY else "rest"
+
+
 ## Force a stage by id, or "" to go back to the automatic choice.
 func set_manual_stage(stage_id: String) -> void:
 	manual_stage = stage_id

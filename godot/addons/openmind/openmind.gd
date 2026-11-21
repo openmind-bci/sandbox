@@ -19,6 +19,8 @@ signal event_received(event: Dictionary)
 signal message_rejected(error: String)
 ## Chunk of the EEG stream relayed by `bridge --eeg`: srate, labels, samples (rows).
 signal eeg_received(frame: Dictionary)
+## The built-in demo decoder started or stopped.
+signal demo_changed(active: bool)
 
 const DEFAULT_URL := "ws://127.0.0.1:8780"
 ## Seconds without status after which the decoder is considered gone.
@@ -44,6 +46,8 @@ var protocol_version := ""
 var clock: Callable = func() -> float: return Time.get_ticks_msec() / 1000.0
 ## Set to false to stop connecting (tests, offline use).
 var autoconnect := true
+## The built-in demo decoder ([DemoDriver]) while it runs, else null.
+var demo: DemoDriver = null
 
 var _peer: WebSocketPeer = null
 var _last_status_at := -INF
@@ -168,9 +172,31 @@ func handle_frame(text: String) -> void:
 	_update_alive()
 
 
+## Start the demo decoder: commands, status and band power without a bridge.
+## [param follow] may return the command to send (a scene's current cue).
+func start_demo(follow: Callable = Callable()) -> void:
+	if demo != null:
+		return
+	demo = DemoDriver.new(self)
+	demo.name = "Demo"
+	demo.follow = follow
+	add_child(demo)
+	demo_changed.emit(true)
+
+
+## Stop the demo decoder: its status stops, so objects stop within 2 s.
+func stop_demo() -> void:
+	if demo == null:
+		return
+	demo.queue_free()
+	demo = null
+	_update_alive()
+	demo_changed.emit(false)
+
+
 ## Whether the decoder is alive now (see class description).
 func compute_alive() -> bool:
-	if not connected or not mqtt_connected:
+	if demo == null and (not connected or not mqtt_connected):
 		return false
 	if last_status.get("state", "") != "running":
 		return false
@@ -181,7 +207,7 @@ func compute_alive() -> bool:
 ## like [method compute_alive], but a `calibrating` decoder also counts. Never use
 ## it for scenes that mirror a real object.
 func feedback_alive() -> bool:
-	if not connected or not mqtt_connected:
+	if demo == null and (not connected or not mqtt_connected):
 		return false
 	if last_status.get("state", "") not in ["running", "calibrating"]:
 		return false
