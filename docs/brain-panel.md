@@ -16,7 +16,7 @@ visible) with coloured blobs where the band power changes.
 | Colour | Meaning |
 |---|---|
 | grey cortex | no notable change (below 12 % of the scale) |
-| blue → cyan → green → yellow → red | strength of the change at the sensors, from weak to strong (`|rel_mu|` or `|rel_beta|`, full red at 0.4) |
+| blue → cyan → green → yellow → red | strength of the change at the sensors, from weak to strong (absolute value of `rel_mu` or `rel_beta`, full red at 0.4) |
 | dark grey | electrode reported `ok: false` (absent, flat or saturated) |
 
 The colour shows the **strength** of the change, not its direction: imagining a
