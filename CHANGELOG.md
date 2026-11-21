@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- README clips of the cockpit in demo mode (animated WebP in `docs/media/`),
+  recorded by `tools/record_demo.gd` and encoded by `tools/make_demo_media.py`.
 - Demo mode in the cockpit (Start demo, Ctrl+D): a built-in simulated decoder
   sends status, commands and band power without bridge nor headset, so that
   scenes move and the 3D brain shows the areas of each command; it follows the

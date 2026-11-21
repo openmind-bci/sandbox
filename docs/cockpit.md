@@ -142,3 +142,16 @@ reaching the scene, safety stop). `tests/live_check.gd` checks a running chain
 (bridge + `keys`), `tests/live_signal.gd` the signal panel (bridge `--eeg` + an
 LSL EEG stream) and `tests/live_calibration.gd` the calibration markers, all
 without opening a window or using the GPU.
+
+## README clips
+
+The animated clips of the README (`docs/media/*.webp`) are recorded in demo mode
+at a fixed frame rate, then encoded as animated WebP under 500 KB each:
+
+```bash
+godot --path godot --resolution 1600x900 --fixed-fps 20 --disable-vsync \
+    --script "$PWD/tools/record_demo.gd" -- /tmp/openmind-frames
+uv run --with pillow python tools/make_demo_media.py /tmp/openmind-frames
+```
+
+Record them again when a scene or a panel changes visibly.
