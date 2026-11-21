@@ -14,8 +14,8 @@ const METRES_PER_PIXEL := 0.12
 const BIRD_HEIGHT := 30.0
 const FORWARD_SPEED := 6.0
 ## Camera: metres behind the bird and above it.
-const CAMERA_DISTANCE := 2.2
-const CAMERA_RISE := 0.7
+const CAMERA_DISTANCE := 2.0
+const CAMERA_RISE := 1.2
 
 var sun: DirectionalLight3D
 var environment: Environment
@@ -29,10 +29,10 @@ const SHRIKE_YAW := PI
 ## (radians): the shoulder leads, the forearm and the hand follow.
 const WING_BONES: Array[String] = ["shoulder.L", "shoulder.R", "Wing.001.L", "Wing.001.R",
 	"Wing.002.L", "Wing.002.R", "w_feather.L", "w_feather.R"]
-const WING_SHARE: Array[float] = [0.75, 0.75, 0.6, 0.6, 0.5, 0.5, 0.35, 0.35]
-const WING_LAG: Array[float] = [0.0, 0.0, 0.55, 0.55, 1.05, 1.05, 1.4, 1.4]
+const WING_SHARE: Array[float] = [0.45, 0.45, 0.8, 0.8, 0.9, 0.9, 0.6, 0.6]
+const WING_LAG: Array[float] = [0.0, 0.0, 0.9, 0.9, 1.7, 1.7, 2.2, 2.2]
 ## Share of the fold (wing tucked back on the up-stroke) taken by each bone.
-const WING_FOLD: Array[float] = [0.0, 0.0, 0.55, 0.55, 0.35, 0.35, 0.2, 0.2]
+const WING_FOLD: Array[float] = [0.0, 0.0, 0.9, 0.9, 0.6, 0.6, 0.3, 0.3]
 ## Local axis around which the forearm and hand fold back.
 const FOLD_AXIS := Vector3(0, 0, 1)
 ## Wing beat: frequency (Hz) and amplitude (radians), cruising and climbing.
