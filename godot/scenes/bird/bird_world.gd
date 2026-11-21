@@ -25,7 +25,15 @@ const PIGEON := "res://assets/models/pigeon/pigeon.glb"
 const SHRIKE := "res://assets/models/shrike/"
 ## Turn of the shrike so that it flies away from the camera (towards -Z).
 const SHRIKE_YAW := PI
-const WING_BONES: Array[String] = ["shoulder.L", "shoulder.R"]
+## Wing bones, root first, with the share of the beat they take and their lag
+## (radians): the shoulder leads, the forearm and the hand follow.
+const WING_BONES: Array[String] = ["shoulder.L", "shoulder.R", "Wing.001.L", "Wing.001.R",
+	"Wing.002.L", "Wing.002.R"]
+const WING_SHARE: Array[float] = [1.0, 1.0, 0.45, 0.45, 0.3, 0.3]
+const WING_LAG: Array[float] = [0.0, 0.0, 0.7, 0.7, 1.3, 1.3]
+## Wing beat: frequency (Hz) and amplitude (radians), cruising and climbing.
+const BEAT_HZ := Vector2(2.0, 3.0)
+const BEAT_AMPLITUDE := Vector2(0.45, 0.65)
 ## Local axis of the wing bones around which the wings beat.
 const WING_AXIS := Vector3(0, 1, 0)
 const FLAP := "flap-wings-animation"
@@ -35,6 +43,10 @@ var _animation: AnimationPlayer
 var _skeleton: Skeleton3D
 var _wing_bones: Array[int] = []
 var _wing_rest: Array[Quaternion] = []
+var _wing_index: Array[int] = []  # index in WING_BONES of each found bone
+var _beat_phase := 0.0
+var _beat_hz := BEAT_HZ.x
+var _beat_amplitude := BEAT_AMPLITUDE.x
 var _bird: Node3D
 var _wings: Array[Node3D] = []
 var _forward := 0.0
@@ -88,7 +100,16 @@ func update(scroll: Vector2, bank: float, flap: float, delta: float,
 		_animation.speed_scale = 1.6 if flapping else 0.35
 	var lift := sin(flap)
 	if not _wing_bones.is_empty():
-		_pose_wings((0.55 if flapping else 0.18) * lift)
+		# Continuous, smooth beats: frequency and amplitude glide between
+		# cruising and climbing instead of jumping.
+		var blend := minf(1.0, 3.0 * delta)
+		_beat_hz = lerpf(_beat_hz, BEAT_HZ.y if flapping else BEAT_HZ.x, blend)
+		_beat_amplitude = lerpf(_beat_amplitude,
+				BEAT_AMPLITUDE.y if flapping else BEAT_AMPLITUDE.x, blend)
+		_beat_phase = fmod(_beat_phase + TAU * _beat_hz * delta, TAU)
+		_pose_wings(_beat_phase, _beat_amplitude)
+		# The body rises a little on each down-stroke.
+		_bird.position.y = BIRD_HEIGHT + 0.035 * sin(_beat_phase - 0.8)
 	for i in _wings.size():
 		var side := -1.0 if i == 0 else 1.0
 		_wings[i].rotation = Vector3(0, 0, side * (0.15 + 0.55 * lift))
@@ -175,21 +196,25 @@ func _build_shrike() -> bool:
 			(node as MeshInstance3D).material_override = material
 	_skeleton = WorldKit.find_child_of_type(shrike, "Skeleton3D")
 	if _skeleton != null:
-		for bone in WING_BONES:
-			var index := _skeleton.find_bone(bone)
+		for k in WING_BONES.size():
+			var index := _skeleton.find_bone(WING_BONES[k])
 			if index >= 0:
 				_wing_bones.append(index)
 				_wing_rest.append(_skeleton.get_bone_pose_rotation(index))
+				_wing_index.append(k)
 	return true
 
 
-## Beat the wings of the shrike: [param angle] is added on each wing bone,
-## mirrored between left and right.
-func _pose_wings(angle: float) -> void:
+## Beat the wings of the shrike at [param phase] with [param amplitude]: each
+## bone turns by its share of the beat, later along the wing, mirrored between
+## left and right.
+func _pose_wings(phase: float, amplitude: float) -> void:
 	for i in _wing_bones.size():
-		var side := 1.0 if WING_BONES[i].ends_with(".L") else -1.0
-		var turn := Quaternion(WING_AXIS, side * angle)
-		_skeleton.set_bone_pose_rotation(_wing_bones[i], _wing_rest[i] * turn)
+		var k := _wing_index[i]
+		var side := 1.0 if WING_BONES[k].ends_with(".L") else -1.0
+		var angle := amplitude * WING_SHARE[k] * sin(phase - WING_LAG[k])
+		_skeleton.set_bone_pose_rotation(_wing_bones[i],
+				_wing_rest[i] * Quaternion(WING_AXIS, side * angle))
 
 
 ## Geometric bird when the pigeon model is not downloaded.
