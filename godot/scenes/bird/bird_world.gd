@@ -28,9 +28,13 @@ const SHRIKE_YAW := PI
 ## Wing bones, root first, with the share of the beat they take and their lag
 ## (radians): the shoulder leads, the forearm and the hand follow.
 const WING_BONES: Array[String] = ["shoulder.L", "shoulder.R", "Wing.001.L", "Wing.001.R",
-	"Wing.002.L", "Wing.002.R"]
-const WING_SHARE: Array[float] = [1.0, 1.0, 0.45, 0.45, 0.3, 0.3]
-const WING_LAG: Array[float] = [0.0, 0.0, 0.7, 0.7, 1.3, 1.3]
+	"Wing.002.L", "Wing.002.R", "w_feather.L", "w_feather.R"]
+const WING_SHARE: Array[float] = [0.75, 0.75, 0.6, 0.6, 0.5, 0.5, 0.35, 0.35]
+const WING_LAG: Array[float] = [0.0, 0.0, 0.55, 0.55, 1.05, 1.05, 1.4, 1.4]
+## Share of the fold (wing tucked back on the up-stroke) taken by each bone.
+const WING_FOLD: Array[float] = [0.0, 0.0, 0.55, 0.55, 0.35, 0.35, 0.2, 0.2]
+## Local axis around which the forearm and hand fold back.
+const FOLD_AXIS := Vector3(0, 0, 1)
 ## Wing beat: frequency (Hz) and amplitude (radians), cruising and climbing.
 const BEAT_HZ := Vector2(2.0, 3.0)
 const BEAT_AMPLITUDE := Vector2(0.45, 0.65)
@@ -212,9 +216,22 @@ func _pose_wings(phase: float, amplitude: float) -> void:
 	for i in _wing_bones.size():
 		var k := _wing_index[i]
 		var side := 1.0 if WING_BONES[k].ends_with(".L") else -1.0
-		var angle := amplitude * WING_SHARE[k] * sin(phase - WING_LAG[k])
-		_skeleton.set_bone_pose_rotation(_wing_bones[i],
-				_wing_rest[i] * Quaternion(WING_AXIS, side * angle))
+		var local := _stroke(phase - WING_LAG[k])
+		var angle := amplitude * WING_SHARE[k] * local
+		# Tuck the wing back while it rises, spread it while it beats down.
+		var fold := amplitude * WING_FOLD[k] * maxf(0.0, local)
+		_skeleton.set_bone_pose_rotation(_wing_bones[i], _wing_rest[i]
+				* Quaternion(WING_AXIS, side * angle) * Quaternion(FOLD_AXIS, side * fold))
+
+
+## Wing position along a beat, from -1 (down) to 1 (up): a smooth wave whose
+## down-stroke lasts longer than the up-stroke, as in real flight.
+static func _stroke(phase: float) -> float:
+	var t := fposmod(phase, TAU) / TAU
+	var down := 0.6  # share of the cycle spent beating down
+	if t < down:
+		return cos(PI * t / down)  # from 1 (up) to -1 (down)
+	return -cos(PI * (t - down) / (1.0 - down))  # back up, faster
 
 
 ## Geometric bird when the pigeon model is not downloaded.
