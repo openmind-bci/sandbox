@@ -22,6 +22,15 @@ var sun: DirectionalLight3D
 var environment: Environment
 var camera: Camera3D
 
+const MANNEQUIN := "res://assets/models/quaternius/UAL1_Standard.glb"
+const SITTING := "Sitting_Idle"  # "_Loop" is removed by the Godot import
+## Where the seated mannequin stands in the chair frame (its root is at its feet).
+const RIDER_OFFSET := Vector3(0.22, 0.0, 0.0)
+const RIDER_SCALE := 0.88
+
+## The person seated in the wheelchair, or null.
+var rider: Node3D
+
 var _chair_node: Node3D
 var _wheels: Array[Node3D] = []
 var _wheel_angles := [0.0, 0.0]
@@ -163,8 +172,35 @@ func _build_chair() -> void:
 	# Scanned wheelchair (Poly Haven, real size); it faces +Z, the chair moves
 	# along its local +X: a quarter turn.
 	if WorldKit.model(_chair_node, "wheelchair_01", Vector3.ZERO, PI / 2.0) != null:
+		rider = _build_rider()
 		return
 	_simple_chair()
+
+
+## Neutral CC0 mannequin of the Quaternius Universal Animation Library, seated
+## in the chair with its own "Sitting_Idle" animation. Returns null when the
+## library is not present.
+func _build_rider() -> Node3D:
+	if not ResourceLoader.exists(MANNEQUIN):
+		return null
+	var person: Node3D = (load(MANNEQUIN) as PackedScene).instantiate()
+	person.position = RIDER_OFFSET
+	person.rotation.y = PI / 2.0  # the mannequin faces +Z, the chair moves along +X
+	person.scale = Vector3.ONE * RIDER_SCALE
+	_chair_node.add_child(person)
+	# A neutral, uniform grey: a mannequin, not a character.
+	var grey := WorldKit.plain(Color("#9AA3B2"), 0.7)
+	var stack: Array[Node] = [person]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		stack.append_array(node.get_children())
+		if node is MeshInstance3D:
+			(node as MeshInstance3D).material_override = grey
+	var player := WorldKit.find_child_of_type(person, "AnimationPlayer") as AnimationPlayer
+	if player != null and player.has_animation(SITTING):
+		player.get_animation(SITTING).loop_mode = Animation.LOOP_LINEAR
+		player.play(SITTING)
+	return person
 
 
 ## Geometric wheelchair when the scanned model is not downloaded.
@@ -199,7 +235,7 @@ func _place_camera(blend: float) -> void:
 			target = centre
 		_:
 			# Behind and above the chair, kept inside the apartment.
-			eye = at - forward * 1.1 + Vector3(0, 1.7, 0)
+			eye = at - forward * 1.6 + Vector3(0, 2.1, 0)
 			eye.x = clampf(eye.x, 0.15, chair.size.x - 0.15)
 			eye.z = clampf(eye.z, -chair.size.y + 0.15, -0.15)
 			target = at + forward * 0.8 + Vector3(0, 0.4, 0)

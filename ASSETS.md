@@ -30,6 +30,7 @@ resolution, to stay light).
 | `godot/assets/polyhaven/Barrel_01/` | Barrel 01 by Jorge Camacho, [Poly Haven](https://polyhaven.com/a/Barrel_01) | CC0 | robot twin obstacles |
 | `godot/assets/polyhaven/ocean_buoy/` | Ocean Buoy by Mateusz Sadek, [Poly Haven](https://polyhaven.com/a/ocean_buoy) | CC0 | boat buoys |
 | `godot/assets/polyhaven/lifebuoy/` | Lifebuoy by Hank Kaamura, [Poly Haven](https://polyhaven.com/a/lifebuoy) | CC0 | boat deck |
+| `godot/assets/models/quaternius/UAL1_Standard.glb` | Universal Animation Library (Standard) by Quaternius, [quaternius.com](https://quaternius.com/packs/universalanimationlibrary.html) (downloaded by hand; licence file in the pack): its neutral mannequin and "Sitting_Idle" animation | CC0 | person seated in the wheelchair |
 | `godot/assets/models/sailing_yacht/` | Sailing yacht, 8 m by Innerscene Corp, [Innerscene 3D parts library](https://www.innerscene.com/tools/library/3d-parts/sailing-yacht-8-m-aa9dbd30) (downloaded by hand from the page; the licence is also embedded in the file) | CC0 | boat |
 | `godot/assets/models/sail_boat/` | Sail Boat by Quaternius, [Poly Pizza](https://poly.pizza/m/BgSZXwmm7k) | CC0 | boat (fallback) |
 | `godot/assets/models/shrike/` | Bird (Yellow-Billed Shrike) by pistachio, [OpenGameArt](https://opengameart.org/content/bird-yellow-billed-shrike); converted to GLB and textures reduced to 1K by `tools/fetch_models.py` | CC0 | calibration bird |

@@ -82,7 +82,7 @@ anchor, state), `state`, `start`, `waypoint`, `finish` (`time_s`, `errors`,
 
 ## Wheelchair (Godot)
 
-A virtual wheelchair in an apartment seen from above
+A virtual wheelchair (a scanned CC0 model with a seated mannequin) in an apartment
 (`scenarios/apartments/apartment_default.yaml`, exported by `export-godot`):
 living room, a closed door, a bedroom. Confidence threshold 0.8.
 
