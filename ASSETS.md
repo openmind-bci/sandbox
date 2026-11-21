@@ -31,7 +31,8 @@ resolution, to stay light).
 | `godot/assets/polyhaven/ocean_buoy/` | Ocean Buoy by Mateusz Sadek, [Poly Haven](https://polyhaven.com/a/ocean_buoy) | CC0 | boat buoys |
 | `godot/assets/polyhaven/lifebuoy/` | Lifebuoy by Hank Kaamura, [Poly Haven](https://polyhaven.com/a/lifebuoy) | CC0 | boat deck |
 | `godot/assets/models/sail_boat/` | Sail Boat by Quaternius, [Poly Pizza](https://poly.pizza/m/BgSZXwmm7k) | CC0 | boat (low-poly model) |
-| `godot/assets/models/pigeon/` | Low poly 3D pigeon (rigged, animated) by mujtaba-io, [OpenGameArt](https://opengameart.org/content/low-poly-3d-pigeon-model-rigged-animated-untextured); converted to GLB with Blender by `tools/fetch_models.py` | CC0 | calibration bird |
+| `godot/assets/models/shrike/` | Bird (Yellow-Billed Shrike) by pistachio, [OpenGameArt](https://opengameart.org/content/bird-yellow-billed-shrike); converted to GLB and textures reduced to 1K by `tools/fetch_models.py` | CC0 | calibration bird |
+| `godot/assets/models/pigeon/` | Low poly 3D pigeon (rigged, animated) by mujtaba-io, [OpenGameArt](https://opengameart.org/content/low-poly-3d-pigeon-model-rigged-animated-untextured); converted to GLB with Blender by `tools/fetch_models.py` | CC0 | calibration bird (fallback) |
 | `godot/addons/openmind/fonts/SpaceGrotesk.ttf` | Florian Karsten, [Space Grotesk](https://github.com/floriankarsten/space-grotesk) (via Google Fonts) | SIL Open Font License 1.1 (`fonts/OFL.txt`) | variable font |
 
 The 3D panel shows the FreeSurfer fsaverage brain, downloaded on each machine by

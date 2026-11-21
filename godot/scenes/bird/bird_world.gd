@@ -22,10 +22,19 @@ var environment: Environment
 var camera: Camera3D
 
 const PIGEON := "res://assets/models/pigeon/pigeon.glb"
+const SHRIKE := "res://assets/models/shrike/"
+## Turn of the shrike so that it flies away from the camera (towards -Z).
+const SHRIKE_YAW := PI
+const WING_BONES: Array[String] = ["shoulder.L", "shoulder.R"]
+## Local axis of the wing bones around which the wings beat.
+const WING_AXIS := Vector3(0, 1, 0)
 const FLAP := "flap-wings-animation"
 
 var _terrain: Node3D
 var _animation: AnimationPlayer
+var _skeleton: Skeleton3D
+var _wing_bones: Array[int] = []
+var _wing_rest: Array[Quaternion] = []
 var _bird: Node3D
 var _wings: Array[Node3D] = []
 var _forward := 0.0
@@ -78,6 +87,8 @@ func update(scroll: Vector2, bank: float, flap: float, delta: float,
 		# Quick wing beats while climbing, slow ones while gliding.
 		_animation.speed_scale = 1.6 if flapping else 0.35
 	var lift := sin(flap)
+	if not _wing_bones.is_empty():
+		_pose_wings((0.55 if flapping else 0.18) * lift)
 	for i in _wings.size():
 		var side := -1.0 if i == 0 else 1.0
 		_wings[i].rotation = Vector3(0, 0, side * (0.15 + 0.55 * lift))
@@ -119,6 +130,8 @@ func _build_bird() -> void:
 	_bird = Node3D.new()
 	_bird.position = Vector3(0, BIRD_HEIGHT, 0)
 	add_child(_bird)
+	if _build_shrike():
+		return
 	# CC0 pigeon by mujtaba-io (OpenGameArt), rigged and animated; it faces +Z
 	# and flies here towards -Z: a half turn.
 	var pigeon := WorldKit.model_file(_bird, PIGEON, Vector3(0, -0.3, 0), PI, 1.3)
@@ -137,6 +150,46 @@ func _build_bird() -> void:
 			_animation.play(FLAP)
 		return
 	_simple_bird()
+
+
+## CC0 yellow-billed shrike by pistachio (OpenGameArt): textured feathers with
+## alpha, rigged without animation; the wings beat by turning their bones.
+func _build_shrike() -> bool:
+	var shrike := WorldKit.model_file(_bird, SHRIKE + "shrike.glb", Vector3(0, -0.45, 0),
+			SHRIKE_YAW, 1.5)
+	if shrike == null:
+		return false
+	var material := StandardMaterial3D.new()
+	material.albedo_texture = load(SHRIKE + "shrike_diff.png")
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	material.alpha_scissor_threshold = 0.4
+	material.normal_enabled = true
+	material.normal_texture = load(SHRIKE + "shrike_norm.png")
+	material.roughness_texture = load(SHRIKE + "shrike_rgh.png")
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED  # feathers seen from both sides
+	var stack: Array[Node] = [shrike]
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		stack.append_array(node.get_children())
+		if node is MeshInstance3D:
+			(node as MeshInstance3D).material_override = material
+	_skeleton = WorldKit.find_child_of_type(shrike, "Skeleton3D")
+	if _skeleton != null:
+		for bone in WING_BONES:
+			var index := _skeleton.find_bone(bone)
+			if index >= 0:
+				_wing_bones.append(index)
+				_wing_rest.append(_skeleton.get_bone_pose_rotation(index))
+	return true
+
+
+## Beat the wings of the shrike: [param angle] is added on each wing bone,
+## mirrored between left and right.
+func _pose_wings(angle: float) -> void:
+	for i in _wing_bones.size():
+		var side := 1.0 if WING_BONES[i].ends_with(".L") else -1.0
+		var turn := Quaternion(WING_AXIS, side * angle)
+		_skeleton.set_bone_pose_rotation(_wing_bones[i], _wing_rest[i] * turn)
 
 
 ## Geometric bird when the pigeon model is not downloaded.
