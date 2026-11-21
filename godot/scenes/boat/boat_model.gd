@@ -16,8 +16,8 @@ const DRIFTING := "DRIFTING"
 const TURNING := "TURNING"
 const ANCHORED := "ANCHORED"
 
-var max_speed := 3.0
-var thrust := 0.5
+var max_speed := 5.0
+var thrust := 0.9
 ## Speed lost per second, as a fraction, sail up and sail down.
 var drag_sail := 0.12
 var drag_drift := 0.08

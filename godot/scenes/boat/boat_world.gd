@@ -28,6 +28,8 @@ var _boat_node: Node3D
 var _sail: MeshInstance3D
 var _model_sail: Node3D
 var _sail_parts: Array[Node3D] = []
+## One pivot per sail, at its foot; scaling it vertically hoists the sail.
+var _sail_pivots: Array[Node3D] = []
 var _near_water: MeshInstance3D
 var _rudder: Node3D
 var _buoy_materials: Array[StandardMaterial3D] = []
@@ -72,12 +74,19 @@ func update(delta: float) -> void:
 	_boat_node.position = to_godot(boat.position, 0.05 * sin(_time * 1.3))
 	_boat_node.rotation = Vector3(0.03 * sin(_time * 0.9), boat.heading,
 			0.04 * sin(_time * 1.1) - 0.15 * boat.turn_rate)
-	_sail_amount = move_toward(_sail_amount, 1.0 if boat.sail_up else 0.08, 0.8 * delta)
+	# About two seconds to hoist or lower the sails.
+	_sail_amount = move_toward(_sail_amount, 1.0 if boat.sail_up else 0.08, 0.5 * delta)
 	if _sail != null:
 		_sail.scale = Vector3(1, _sail_amount, 1)
 		_sail.position.y = 0.6 + 1.3 * _sail_amount
-	for part in _sail_parts:
-		part.visible = _sail_amount > 0.5
+	# Hoisting: each sail unrolls upwards from its foot, and back down.
+	var hoist := ease(clampf((_sail_amount - 0.08) / 0.92, 0.0, 1.0), -1.6)
+	for pivot in _sail_pivots:
+		pivot.visible = hoist > 0.02
+		pivot.scale = Vector3(1.0, maxf(hoist, 0.02), 1.0)
+	if _sail_pivots.is_empty():
+		for part in _sail_parts:
+			part.visible = _sail_amount > 0.5
 	if _model_sail != null:
 		_model_sail.visible = _sail_amount > 0.1
 		_model_sail.scale = Vector3(1, maxf(_sail_amount, 0.1), 1)
@@ -170,6 +179,7 @@ func _build_boat() -> void:
 			if node is Node3D and ("mainsail" in name or "foresail" in name
 					or "mainsheet" in name or "jibsheet" in name):
 				_sail_parts.append(node)
+		_rig_sails()
 		_rudder = Node3D.new()
 		_boat_node.add_child(_rudder)
 		return
@@ -182,6 +192,40 @@ func _build_boat() -> void:
 		_boat_node.add_child(_rudder)
 		return
 	_simple_boat()
+
+
+## Put the parts of each sail (main, fore) under a pivot at the foot of the sail,
+## keeping their place, so that scaling the pivot raises or lowers the sail.
+func _rig_sails() -> void:
+	for group in ["main", "fore"]:
+		var parts: Array[Node3D] = []
+		for part in _sail_parts:
+			var name := str(part.name).to_lower()
+			if (group == "main" and ("mainsail" in name or "mainsheet" in name)) or (
+					group == "fore" and ("foresail" in name or "jibsheet" in name)):
+				parts.append(part)
+		if parts.is_empty():
+			continue
+		var box := AABB()
+		var first := true
+		var to_boat := _boat_node.global_transform.affine_inverse()
+		for part in parts:
+			if part is MeshInstance3D and (part as MeshInstance3D).mesh != null:
+				var local: AABB = (to_boat * part.global_transform) \
+						* (part as MeshInstance3D).mesh.get_aabb()
+				box = local if first else box.merge(local)
+				first = false
+		if first:
+			continue
+		var pivot := Node3D.new()
+		pivot.position = Vector3(box.get_center().x, box.position.y, box.get_center().z)
+		_boat_node.add_child(pivot)
+		for part in parts:
+			var keep := part.global_transform
+			part.get_parent().remove_child(part)
+			pivot.add_child(part)
+			part.global_transform = keep
+		_sail_pivots.append(pivot)
 
 
 ## Geometric boat when the model is not downloaded.
