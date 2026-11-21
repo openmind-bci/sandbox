@@ -4,6 +4,11 @@ extends Node3D
 ## ocean buoys, an outdoor sky, and a CC0 sail boat model whose sail rises and
 ## falls with the commands. Coordinates: (x, y) -> (x, 0, -y).
 
+const YACHT := "res://assets/models/sailing_yacht/sailing_yacht.glb"
+## Turn of the yacht model so that its bow points along +X.
+const YACHT_YAW := 0.0
+## Depth of the keel under the water line, in metres.
+const YACHT_DRAFT := 1.1
 const SAIL_BOAT := "res://assets/models/sail_boat/sail_boat.glb"
 ## Turn of the boat model so that its bow points along +X (the boat's forward).
 const MODEL_YAW := PI / 2.0
@@ -22,6 +27,7 @@ var course: TwinCourse
 var _boat_node: Node3D
 var _sail: MeshInstance3D
 var _model_sail: Node3D
+var _sail_parts: Array[Node3D] = []
 var _near_water: MeshInstance3D
 var _rudder: Node3D
 var _buoy_materials: Array[StandardMaterial3D] = []
@@ -70,6 +76,8 @@ func update(delta: float) -> void:
 	if _sail != null:
 		_sail.scale = Vector3(1, _sail_amount, 1)
 		_sail.position.y = 0.6 + 1.3 * _sail_amount
+	for part in _sail_parts:
+		part.visible = _sail_amount > 0.5
 	if _model_sail != null:
 		_model_sail.visible = _sail_amount > 0.1
 		_model_sail.scale = Vector3(1, maxf(_sail_amount, 0.1), 1)
@@ -149,12 +157,27 @@ func _build_buoys() -> void:
 func _build_boat() -> void:
 	_boat_node = Node3D.new()
 	add_child(_boat_node)
+	# CC0 8 m sailing yacht by Innerscene (real scale); its sails are shown when
+	# hoisted and hidden when lowered.
+	var yacht := WorldKit.model_file(_boat_node, YACHT, Vector3(0, -YACHT_DRAFT, 0), YACHT_YAW,
+			0.0)
+	if yacht != null:
+		var stack: Array[Node] = [yacht]
+		while not stack.is_empty():
+			var node: Node = stack.pop_back()
+			stack.append_array(node.get_children())
+			var name := str(node.name).to_lower()
+			if node is Node3D and ("mainsail" in name or "foresail" in name
+					or "mainsheet" in name or "jibsheet" in name):
+				_sail_parts.append(node)
+		_rudder = Node3D.new()
+		_boat_node.add_child(_rudder)
+		return
 	# CC0 sail boat by Quaternius (Poly Pizza); its "Sail" node rises and falls.
 	var model := WorldKit.model_file(_boat_node, SAIL_BOAT, Vector3.ZERO, MODEL_YAW,
 			boat.length)
 	if model != null:
 		_model_sail = model.find_child("Sail", true, false) as Node3D
-		WorldKit.model(_boat_node, "lifebuoy", Vector3(-0.6, 0.55, boat.width / 2.0), 0.0, 0.45)
 		_rudder = Node3D.new()
 		_boat_node.add_child(_rudder)
 		return
@@ -193,8 +216,10 @@ func _place_camera(blend: float) -> void:
 		target = centre
 	else:
 		var forward := Vector3(cos(boat.heading), 0, -sin(boat.heading))
-		eye = at - forward * 11.0 + Vector3(0, 5.5, 0)
-		target = at + forward * 6.0
+		# Three-quarter view from behind, so that the sails show their cloth.
+		var side := Vector3(forward.z, 0, -forward.x)
+		eye = at - forward * 16.0 + side * 8.0 + Vector3(0, 7.0, 0)
+		target = at + forward * 4.0 + Vector3(0, 3.0, 0)
 	camera.position = camera.position.lerp(eye, blend)
 	if camera.position.distance_to(target) > 0.01:
 		camera.look_at(target, Vector3.UP)

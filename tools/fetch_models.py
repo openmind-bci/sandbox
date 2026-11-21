@@ -7,6 +7,10 @@
   (996 triangles, rigged), converted to GLB with Blender; its 2K textures are
   reduced to 1K PNG (the colour map keeps its alpha for the feathers).
 
+The boat itself, "Sailing yacht, 8 m" by Innerscene (CC0), has no direct link:
+download it from https://www.innerscene.com/tools/library/3d-parts/sailing-yacht-8-m-aa9dbd30
+and copy it to ``godot/assets/models/sailing_yacht/sailing_yacht.glb``.
+
 Files go to ``godot/assets/models/<name>/`` (Git LFS) and are credited in
 ASSETS.md. Blender must be installed for the pigeon (``blender`` on PATH):
 

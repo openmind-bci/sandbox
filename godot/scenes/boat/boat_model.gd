@@ -25,9 +25,10 @@ var turn_speed := deg_to_rad(25.0)
 var anchor_brake := 1.5
 ## Wind pushing a drifting boat, metres per second (x, y).
 var wind := Vector2(0.25, -0.1)
-var radius := 1.6
-var length := 3.2
-var width := 1.3
+## Size of the 8 m sailing yacht (Innerscene model).
+var radius := 3.0
+var length := 8.0
+var width := 2.6
 
 var lake := Vector2(60, 40)
 ## Whether the edges of [member lake] stop the boat (open sea by default).

@@ -67,10 +67,10 @@ Events, with `"object": "robot-twin"`:
 
 ## Boat (Godot)
 
-A sailing boat at sea (`scenarios/courses/boat_sea.yaml`: open water to the
+An 8 m sailing yacht at sea (`scenarios/courses/boat_sea.yaml`: open water to the
 horizon and seven buoys to reach in order, as a slalom), slow and forgiving on purpose: inertia and drift,
-no time pressure. `forward` hoists the sail (the boat speeds up slowly to 3 m/s),
-`rest` lowers it (the boat slows down slowly and the wind pushes it), `left` /
+no time pressure. `forward` hoists the sails (the boat speeds up slowly to 3 m/s),
+`rest` lowers them (the boat slows down slowly and the wind pushes it), `left` /
 `right` turn the rudder while held (more effect at speed), `action` drops the
 anchor (the boat stops and stays until the sail is hoisted again). There is no
 shore at sea; islands can be added to a course as obstacles (the boat stops
