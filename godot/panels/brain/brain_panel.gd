@@ -16,6 +16,9 @@ const SAFETY_RENDER_S := 0.5
 const VIEWS := {"Top": Vector2(0.0, -1.45), "Left": Vector2(-PI / 2.0, -0.2),
 	"Right": Vector2(PI / 2.0, -0.2)}
 
+## Distance of the camera from the centre of the brain, in metres.
+const CAMERA_DISTANCE := 0.22
+
 ## "rel_mu" or "rel_beta".
 var band := "rel_mu"
 var show_electrodes := false
@@ -23,6 +26,8 @@ var show_electrodes := false
 var values := {}
 var targets := {}
 var messages := 0
+## Large window of the brain while it is open, else null.
+var large_window: Window = null
 
 var mesh := BrainMesh.create()
 var colors := BrainColors.new()
@@ -32,6 +37,7 @@ var viewport: SubViewport
 var _instance: MeshInstance3D
 var _pivot: Node3D
 var _camera: Camera3D
+var _large_pivot: Node3D
 var _markers: Node3D
 var _legend: Label
 var _yaw := 0.0
@@ -161,7 +167,7 @@ func _render() -> void:
 func _build_viewport() -> void:
 	var container := SubViewportContainer.new()
 	container.stretch = true
-	container.custom_minimum_size = Vector2(300, 260)
+	container.custom_minimum_size = Vector2(300, 340)
 	container.gui_input.connect(_on_view_input)
 	# A resized or re-shown viewport loses its image: draw it again.
 	container.resized.connect(_render)
@@ -209,7 +215,7 @@ func _build_viewport() -> void:
 	_pivot.position = BrainMesh.to_godot(mesh.centre)
 	world.add_child(_pivot)
 	_camera = Camera3D.new()
-	_camera.position = Vector3(0, 0, 0.26)
+	_camera.position = Vector3(0, 0, CAMERA_DISTANCE)
 	_camera.fov = 40.0
 	_pivot.add_child(_camera)
 
@@ -230,6 +236,12 @@ func _build_controls() -> void:
 		button.pressed.connect(set_view.bind(view_name))
 		row.add_child(button)
 	add_child(row)
+	var enlarge := Button.new()
+	enlarge.text = "Enlarge ⤢"
+	enlarge.tooltip_text = "Open the brain in a large window (drag to rotate)"
+	enlarge.custom_minimum_size = Vector2(0, OpenMindTheme.MIN_TARGET)
+	enlarge.pressed.connect(open_large)
+	add_child(enlarge)
 	var labels := CheckBox.new()
 	labels.text = "Electrodes"
 	labels.custom_minimum_size = Vector2(0, OpenMindTheme.MIN_TARGET)
@@ -252,6 +264,56 @@ func _update_camera() -> void:
 	if _pivot != null:
 		_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
 		_render()
+	if _large_pivot != null:
+		_large_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
+
+
+## Open (or bring forward) a large, resizable window showing the same brain.
+func open_large() -> void:
+	if large_window != null:
+		large_window.grab_focus()
+		return
+	large_window = Window.new()
+	large_window.title = "3D brain — activity at the sensors"
+	large_window.size = Vector2i(820, 720)
+	large_window.min_size = Vector2i(360, 320)
+	large_window.close_requested.connect(close_large)
+	var container := SubViewportContainer.new()
+	container.stretch = true
+	container.set_anchors_preset(Control.PRESET_FULL_RECT)
+	container.gui_input.connect(_on_view_input)
+	large_window.add_child(container)
+	var view := SubViewport.new()
+	view.world_3d = viewport.world_3d  # the same brain, lights and colours
+	view.msaa_3d = Viewport.MSAA_2X
+	container.add_child(view)
+	_large_pivot = Node3D.new()
+	_large_pivot.position = BrainMesh.to_godot(mesh.centre)
+	_large_pivot.rotation = Vector3(_pitch, _yaw, 0.0)
+	view.add_child(_large_pivot)
+	var camera := Camera3D.new()
+	camera.position = Vector3(0, 0, CAMERA_DISTANCE * 0.95)
+	camera.fov = 40.0
+	_large_pivot.add_child(camera)
+	camera.current = true
+	var legend := Label.new()
+	legend.text = LEGEND
+	legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	legend.add_theme_font_size_override("font_size", 16)
+	legend.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	legend.offset_top = -64
+	legend.offset_left = 16
+	legend.offset_right = -16
+	large_window.add_child(legend)
+	add_child(large_window)
+	large_window.popup_centered()
+
+
+func close_large() -> void:
+	if large_window != null:
+		large_window.queue_free()
+		large_window = null
+		_large_pivot = null
 
 
 func _load_positions() -> Dictionary:

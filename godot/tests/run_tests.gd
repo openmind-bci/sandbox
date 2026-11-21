@@ -516,6 +516,11 @@ func test_brain() -> void:
 		panel._process(0.05)
 	check(float(panel.values["C3"]) < -0.4 and float(panel.values["C4"]) > -0.05,
 			"values move smoothly to the new message")
+	panel.open_large()
+	await process_frame
+	check(panel.large_window != null and panel.large_window.visible, "large brain window opens")
+	panel.close_large()
+	check(panel.large_window == null, "large brain window closes")
 	panel.set_view("Left")
 	panel.set_band("rel_beta")
 	check(panel.band == "rel_beta" and panel.values.is_empty(), "band switch resets")

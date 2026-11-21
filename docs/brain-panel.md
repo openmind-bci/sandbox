@@ -22,7 +22,8 @@ The scale is diverging and saturates at ±0.4. Imagining the left hand should tu
 the area of **C4** blue, the right hand **C3**, both feet **Cz / CPz**.
 
 Controls: drag to rotate, **Top / Left / Right** views, **mu / beta** band,
-**Electrodes** to show their positions and names. Colours move smoothly
+**Electrodes** to show their positions and names, **Enlarge ⤢** to open the same
+brain in a large, resizable window (drag to rotate there too). Colours move smoothly
 (time constant 0.25 s).
 
 ## Test sources, no headset needed
