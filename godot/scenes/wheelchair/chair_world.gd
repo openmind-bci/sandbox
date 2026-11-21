@@ -235,7 +235,9 @@ func _place_camera(blend: float) -> void:
 			target = centre
 		_:
 			# Behind and above the chair, kept inside the apartment.
-			eye = at - forward * 1.6 + Vector3(0, 2.1, 0)
+			# Three-quarter view from behind: the seated person shows, legs included.
+			var side := Vector3(forward.z, 0, -forward.x)
+			eye = at - forward * 1.4 + side * 1.0 + Vector3(0, 1.9, 0)
 			eye.x = clampf(eye.x, 0.15, chair.size.x - 0.15)
 			eye.z = clampf(eye.z, -chair.size.y + 0.15, -0.15)
 			target = at + forward * 0.8 + Vector3(0, 0.4, 0)
