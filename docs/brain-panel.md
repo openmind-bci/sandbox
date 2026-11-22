@@ -39,6 +39,68 @@ brain in a large, resizable window (drag to rotate there too). Colours move smoo
 3. a public recording replayed by Plug with `openmind-core bandpower` (real,
    noisier activity).
 
+Sources 2 and 3 are detailed in [Live sources](#live-sources).
+
+## Live sources
+
+These sources feed the panel from a real LSL EEG stream, through the whole chain
+Plug → Core → MQTT → bridge → cockpit. They need **OpenMind Core in a version that
+has the `bandpower` command** (`openmind-core bandpower`); older versions do not.
+Start the [development broker](dev-broker.md) first (`cd dev && docker compose up -d`).
+
+### (a) Synthetic source of Plug, known answer
+
+```bash
+# 1. EEG stream: synthetic source, montage C (the eight motor electrodes)
+cd plug && uv run openmind-plug stream --source synthetic --montage C
+
+# 2. band power from the LSL stream (resting baseline measured over the first 30 s)
+cd core && uv sync --extra plug && uv run openmind-core bandpower --expected C
+
+# 3. bridge to the cockpit
+cd sandbox && uv run openmind-sandbox bridge
+
+# 4. cockpit: open godot/ in Godot 4 and run it; the bridge connects by itself
+```
+
+In the terminal of Plug, the keys switch the imagined state: `a` = left, `d` =
+right, `s` = feet, `r` = rest (see `plug/docs/sources.md`). Stay at rest during
+the baseline (`--baseline-s 30` sets its length),
+then press keys. What the **3D brain** should show:
+
+| Key | Area that desynchronizes (`rel_mu` falls) |
+|---|---|
+| `a` (left) | **C4** (right hemisphere), with weaker FC4 / CP4 |
+| `d` (right) | **C3** (left hemisphere), with weaker FC3 / CP3 |
+| `s` (feet) | **Cz** (and CPz) |
+| `r` (rest) | back to grey |
+
+`--expected C` makes Core refuse a stream that does not carry the montage `C`
+labels; `--dry-run` computes without publishing, to check Core alone.
+
+### (b) Public recording replayed by Plug
+
+```bash
+cd plug && uv run openmind-plug stream --source replay --dataset bnci2014_001 --subject 1
+```
+
+The replay source needs the `replay` extra of Plug (`pip install "openmind-plug[replay]"`,
+or `uv sync --extra replay`); the dataset is downloaded on first use. Then run steps 2
+to 4 of (a) (add `--expected` with the montage of the stream if it is not `C`). The
+activity is real, so noisier than the synthetic source: expect the same areas to
+change with the cue of each trial (left hand → C4, right hand → C3), less cleanly.
+
+### Cross-check with the 2D map
+
+With the same messages, compare the 3D panel with the MNE map:
+
+```bash
+uv run --with "mne>=1.7" --with matplotlib python tools/check_topomap.py
+```
+
+The electrode printed as `lowest rel_mu` (for example `C4` on a left cue) must be
+the one that turns blue in the 3D panel and in the map.
+
 ## 2D check
 
 When in doubt, compare with a classic topographic map drawn by MNE from the same

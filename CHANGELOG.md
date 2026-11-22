@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- "Live sources" section of `docs/brain-panel.md`: feed the 3D brain from the
+  synthetic source or a public replay through `openmind-core bandpower`.
 - `openmind-sandbox keys --assistance VALUE | --assistance-ramp SECONDS` and
   `--score-every SECONDS` simulate the calibration feedback of the decoder
   (assistance in `status`, simulated `score`), to test the bird stages and the
