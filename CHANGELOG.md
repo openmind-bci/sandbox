@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Robot hardware guide `docs/hardware/robot.md`: parts, wiring, flashing and
+  the validation procedure of SBX-090.
 - Opt-in confirmation of `action` in `Adapter` (`confirm_action`,
   `confirm_window_s`, hook `on_action_armed`, events `action_armed`,
   `action_confirmed`, `action_cancelled`), documented in

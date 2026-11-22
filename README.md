@@ -183,6 +183,7 @@ uv run openmind-sandbox keys --script examples/keys-demo.yaml --bandpower
 | [Create your object](docs/create-your-object.md) | Connect your own object in 10 minutes (adapter template) |
 | [Robot configuration](docs/robot-config.md) | `robot.yaml`, shared by firmware, twin and mock |
 | [Firmware](docs/firmware.md) | ESP32 robot firmware |
+| [Robot hardware](docs/hardware/robot.md) | Parts, wiring, flashing and validation of the real robot |
 
 ## Data and privacy
 
