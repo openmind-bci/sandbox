@@ -13,6 +13,8 @@ from openmind_protocol import Command, Message, ProtocolError, Status, decode_to
 
 import openmind_sandbox
 from openmind_sandbox import keyboard
+from openmind_sandbox.adapters.examples.fake_lamp import DEFAULT_LAMP_PORT, FakeLampServer
+from openmind_sandbox.adapters.examples.lamp import DEFAULT_URL, LampAdapter
 from openmind_sandbox.bridge import DEFAULT_WS_PORT
 from openmind_sandbox.calibration import Calibration
 from openmind_sandbox.config import RobotConfig, with_thresholds
@@ -36,6 +38,12 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
 )
+
+adapter_app = typer.Typer(
+    help="Run an adapter: connect a real or virtual object to the commands.",
+    no_args_is_help=True,
+)
+app.add_typer(adapter_app, name="adapter")
 
 Host = Annotated[str, typer.Option(help="MQTT broker host.")]
 Port = Annotated[int, typer.Option(help="MQTT broker port.")]
@@ -322,6 +330,53 @@ def mock_robot(
     finally:
         link.close()
         typer.echo("\nMock robot stopped.")
+
+
+@adapter_app.command("lamp")
+def adapter_lamp(
+    url: Annotated[str, typer.Option(help="Base URL of the lamp (local API only).")] = DEFAULT_URL,
+    broker: Annotated[str, typer.Option(help="MQTT broker as HOST or HOST:PORT.")] = DEFAULT_HOST,
+    min_confidence: Annotated[
+        float, typer.Option(min=0.0, max=1.0, help="Commands below this are ignored.")
+    ] = 0.7,
+) -> None:
+    """Example adapter: toggle and dim a lamp through its local HTTP API.
+
+    action toggles, left/right dim, rest keeps the state. Try it with
+    `openmind-sandbox fake-lamp` and `openmind-sandbox keys`.
+    """
+    host, _, port_text = broker.partition(":")
+    try:
+        port = int(port_text) if port_text else DEFAULT_PORT
+    except ValueError as error:
+        raise typer.BadParameter("expected HOST or HOST:PORT", param_hint="--broker") from error
+    link = MqttLink(host or DEFAULT_HOST, port, name="openmind-lamp")
+    lamp = LampAdapter(url=url, min_confidence=min_confidence)
+    typer.echo(f"Lamp adapter on {url} (broker {host}:{port}). Ctrl+C to stop.")
+    try:
+        lamp.run(link)
+    except BrokerUnavailableError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+
+
+@app.command("fake-lamp")
+def fake_lamp(
+    port: Annotated[int, typer.Option(help="TCP port to listen on.")] = DEFAULT_LAMP_PORT,
+) -> None:
+    """Run a fake lamp with a local HTTP API, to try the lamp adapter."""
+    try:
+        server = FakeLampServer(port)
+    except OSError as error:
+        typer.echo(f"cannot listen on port {port}: {error}", err=True)
+        raise typer.Exit(1) from error
+    typer.echo(f"Fake lamp on http://127.0.0.1:{port}/light. Ctrl+C to stop.")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
 
 
 @app.command("export-godot")

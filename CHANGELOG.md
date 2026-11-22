@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Adapter base class (`openmind_sandbox.adapters.Adapter`) with the protocol
+  safety rules built in and not overridable: no command before the first
+  status, stop on heartbeat loss, low confidence and stale `seq` ignored,
+  contextual `action`. Subclasses only implement `on_command` and `stop`.
+- Lamp example adapter driven through a local HTTP API, a fake lamp server,
+  and the commands `openmind-sandbox adapter lamp` and `fake-lamp`.
+- `template/adapter/` to copy for a new object, and the guide
+  `docs/create-your-object.md` (connect your object in 10 minutes).
 - README clips of the cockpit in demo mode (animated WebP in `docs/media/`),
   recorded by `tools/record_demo.gd` and encoded by `tools/make_demo_media.py`.
 - Demo mode in the cockpit (Start demo, Ctrl+D): a built-in simulated decoder
