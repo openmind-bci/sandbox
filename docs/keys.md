@@ -8,6 +8,8 @@ headset:
 |---|---|---|
 | `openmind/v1/commands` | the command of the held key, with a new `seq` each time | on change, then every 0.25 s |
 | `openmind/v1/status` | `running`, model `keyboard-sim` | 4 Hz (the protocol asks ≥ 2 Hz) |
+| `openmind/v1/status` `assistance` | assistance level, with `--assistance` / `--assistance-ramp` | in every status |
+| `openmind/v1/score` | simulated progress score, with `--score-every` | every N seconds |
 | `openmind/v1/bandpower` | fake band power, with `--bandpower` | 10 Hz |
 
 Every message is validated against the `openmind-protocol` schemas before it is
@@ -62,6 +64,30 @@ steps:
 
 `duration` is in seconds; `confidence` overrides `--confidence` for that step.
 Invalid files are refused with the name of the faulty field.
+
+## Calibration feedback
+
+During a calibration, OpenMind Core announces an `assistance` level in `status`
+(1 = fully assisted, falling to 0 as the user learns) and publishes a `score`.
+`keys` can play both, to test the stages of the bird scene and the score panel
+exactly as Core will drive them (see [calibration](calibration.md)):
+
+```bash
+openmind-sandbox keys --assistance 0.5                       # fixed level in every status
+openmind-sandbox keys --assistance-ramp 120 --score-every 2  # 1 -> 0 over 2 minutes
+```
+
+| Option | Effect |
+|---|---|
+| `--assistance VALUE` | `assistance` (0-1) in every `status` |
+| `--assistance-ramp SECONDS` | falls linearly from 1 to 0 over this time from the start, then stays 0 (not with `--assistance`) |
+| `--score-every SECONDS` | one `score` every N seconds |
+
+The simulated score is a learner who improves over 90 s: per-command accuracy
+rises from about 0.35 to 0.88 and false starts fall from 0.30 to 0.04. `ready`
+becomes true once every command reaches 0.70, false starts are at most 0.10 and
+that state has lasted 2 blocks of 10 s. It is a known answer for the display, not a
+model of a user.
 
 ## Fake band power
 

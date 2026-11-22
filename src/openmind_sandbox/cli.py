@@ -23,9 +23,11 @@ from openmind_sandbox.keyboard_sim import (
     ACTION_KEYS,
     DEFAULT_CHANNELS,
     KEY_COMMANDS,
+    AssistanceSchedule,
     CommandSimulator,
     FakeBandPower,
     HoldTracker,
+    ScoreSimulator,
     Script,
     ScriptPlayer,
 )
@@ -94,6 +96,21 @@ def keys(
         Path | None,
         typer.Option(exists=True, dir_okay=False, help="Replay commands from a YAML script."),
     ] = None,
+    assistance: Annotated[
+        float | None,
+        typer.Option(min=0.0, max=1.0, help="Fixed assistance (0-1) announced in every status."),
+    ] = None,
+    assistance_ramp: Annotated[
+        float | None,
+        typer.Option(
+            min=0.1,
+            help="Assistance falling linearly from 1 to 0 over this many seconds, then 0.",
+        ),
+    ] = None,
+    score_every: Annotated[
+        float | None,
+        typer.Option(min=0.1, help="Publish a simulated score every this many seconds."),
+    ] = None,
     bandpower: Annotated[
         bool, typer.Option(help="Also publish fake band power messages (10 Hz).")
     ] = False,
@@ -109,10 +126,27 @@ def keys(
     """Simulate a live decoder from the keyboard or from a script.
 
     Publishes commands, a running status at 4 Hz and, with --bandpower, fake
-    band power messages, all validated against the OpenMind protocol.
+    band power messages, all validated against the OpenMind protocol. With
+    --assistance / --assistance-ramp and --score-every it also plays the
+    calibration feedback of the decoder (assistance in status, score).
     """
+    if assistance is not None and assistance_ramp is not None:
+        raise typer.BadParameter("use --assistance or --assistance-ramp, not both")
     try:
-        simulator = CommandSimulator(user=user, confidence=confidence)
+        schedule = (
+            AssistanceSchedule(ramp_s=assistance_ramp)
+            if assistance_ramp is not None
+            else AssistanceSchedule(fixed=assistance)
+            if assistance is not None
+            else None
+        )
+        simulator = CommandSimulator(
+            user=user,
+            confidence=confidence,
+            assistance=schedule,
+            scores=ScoreSimulator() if score_every is not None else None,
+            score_period=score_every if score_every is not None else 2.0,
+        )
         loaded = Script.load(script) if script is not None else None
         if loaded is not None and loaded.user is not None:
             simulator.user = loaded.user

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `openmind-sandbox keys --assistance VALUE | --assistance-ramp SECONDS` and
+  `--score-every SECONDS` simulate the calibration feedback of the decoder
+  (assistance in `status`, simulated `score`), to test the bird stages and the
+  score panel; documented in `docs/keys.md` and `docs/calibration.md`.
 - `openmind-sandbox report <events.jsonl> [--json]` summarises the course runs
   of an events log (duration, waypoints, errors, obstacle and safety stops,
   commands, average speed), and `openmind-sandbox bridge --log FILE` records

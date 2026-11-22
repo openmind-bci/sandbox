@@ -7,6 +7,8 @@ without a headset:
   one ``action``, no key gives ``rest``; repeated at a bounded rate with a new
   ``seq`` each time;
 - ``status`` heartbeats (``running``) at 4 Hz by default (the protocol asks ≥ 2 Hz);
+- optionally the calibration feedback of the decoder: an ``assistance`` level in
+  ``status`` (fixed, or ramping down from 1 to 0) and periodic ``score`` messages;
 - optionally fake ``bandpower`` messages at 10 Hz, with a simulated
   desynchronization over the motor area of the commanded movement.
 
@@ -32,6 +34,7 @@ from openmind_protocol import (
     Command,
     CommandName,
     Message,
+    Score,
     Status,
 )
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -93,6 +96,105 @@ class HoldTracker:
         return "rest"
 
 
+# --- Calibration feedback ------------------------------------------------------
+
+
+class AssistanceSchedule:
+    """Assistance level announced in ``status``: fixed, or ramping from 1 to 0.
+
+    With ``ramp_s`` the level decreases linearly from 1 to 0 over ``ramp_s`` seconds,
+    counted from the first call of :meth:`value`, then stays at 0; otherwise it
+    is the constant ``fixed``.
+    """
+
+    def __init__(self, fixed: float = 1.0, ramp_s: float | None = None) -> None:
+        if not 0.0 <= fixed <= 1.0:
+            raise ValueError("assistance must be between 0 and 1")
+        if ramp_s is not None and ramp_s <= 0:
+            raise ValueError("the assistance ramp must last a positive number of seconds")
+        self.fixed = fixed
+        self.ramp_s = ramp_s
+        self._start: float | None = None
+
+    def value(self, now: float) -> float:
+        """Assistance (0-1) at time ``now``."""
+        if self.ramp_s is None:
+            return self.fixed
+        if self._start is None:
+            self._start = now
+        return round(min(1.0, max(0.0, 1.0 - (now - self._start) / self.ramp_s)), 3)
+
+
+#: Per-command offsets so that the simulated accuracies differ a little.
+_ACCURACY_OFFSET: Final[dict[CommandName, float]] = {
+    "left": 0.03,
+    "right": -0.03,
+    "forward": -0.05,
+    "rest": 0.05,
+}
+
+
+class ScoreSimulator:
+    """Plausible ``score`` messages for a user who learns over ``duration_s`` seconds.
+
+    Per-command accuracy rises linearly from 0.35 to 0.88 (false starts fall from
+    0.30 to 0.04). ``ready`` follows the thresholds of the protocol documentation:
+    every command at least ``min_accuracy`` (0.70), false starts at most
+    ``max_false_starts`` (0.10) and ``stable_blocks_needed`` (2) consecutive blocks
+    of ``block_s`` seconds in that state. Not a model of a user, only a known answer
+    for the cockpit's progress panel.
+    """
+
+    def __init__(
+        self,
+        user: str = "P00",
+        duration_s: float = 90.0,
+        block_s: float = 10.0,
+        min_accuracy: float = 0.70,
+        max_false_starts: float = 0.10,
+        stable_blocks_needed: int = 2,
+    ) -> None:
+        if duration_s <= 0 or block_s <= 0:
+            raise ValueError("duration_s and block_s must be positive")
+        self.user = user
+        self.duration_s = duration_s
+        self.block_s = block_s
+        self.min_accuracy = min_accuracy
+        self.max_false_starts = max_false_starts
+        self.stable_blocks_needed = stable_blocks_needed
+        self._start: float | None = None
+        self._ok_since: float | None = None
+
+    def score(self, now: float) -> Score:
+        """Score at time ``now`` (call with non-decreasing times)."""
+        if self._start is None:
+            self._start = now
+        progress = min(1.0, max(0.0, (now - self._start) / self.duration_s))
+        per_command = {
+            name: round(min(1.0, max(0.0, 0.35 + 0.53 * progress + offset)), 3)
+            for name, offset in _ACCURACY_OFFSET.items()
+        }
+        false_starts = round(0.30 - 0.26 * progress, 3)
+        met = (
+            min(per_command.values()) >= self.min_accuracy and false_starts <= self.max_false_starts
+        )
+        if not met:
+            self._ok_since = None
+            stable = 0
+        else:
+            if self._ok_since is None:
+                self._ok_since = now
+            stable = int((now - self._ok_since) // self.block_s)
+        return Score(
+            user=self.user,
+            overall=round(sum(per_command.values()) / len(per_command), 3),
+            ready=met and stable >= self.stable_blocks_needed,
+            per_command=per_command,
+            false_start_rate=false_starts,
+            stable_blocks=stable,
+        )
+
+
 # --- Decoder simulator ---------------------------------------------------------
 
 
@@ -110,6 +212,10 @@ class CommandSimulator:
         repeat_period: Seconds after which an unchanged command is sent again.
         action_refractory: Seconds during which further ``action`` triggers are
             ignored (auto-repeat of the space bar).
+        assistance: Assistance announced in ``status`` (``None``: none announced).
+        scores: Source of ``score`` messages, published every ``score_period``
+            seconds (``None``: no score).
+        score_period: Seconds between two ``score`` messages.
     """
 
     def __init__(
@@ -120,6 +226,9 @@ class CommandSimulator:
         status_period: float = 0.25,
         repeat_period: float = 0.25,
         action_refractory: float = 0.6,
+        assistance: AssistanceSchedule | None = None,
+        scores: ScoreSimulator | None = None,
+        score_period: float = 2.0,
     ) -> None:
         if not 0 < status_period <= 0.5:
             raise ValueError("status_period must be in (0, 0.5] s (status at >= 2 Hz)")
@@ -131,6 +240,12 @@ class CommandSimulator:
         self.status_period = status_period
         self.repeat_period = repeat_period
         self.action_refractory = action_refractory
+        if score_period <= 0:
+            raise ValueError("score_period must be positive")
+        self.assistance = assistance
+        self.scores = scores
+        self.score_period = score_period
+        self._next_score = -math.inf
         self.intent: CommandName = "rest"
         self.seq = 0
         self.last_sent: CommandName | None = None
@@ -164,8 +279,15 @@ class CommandSimulator:
         """Messages due at time ``now``: at most one status and one command."""
         messages: list[Message] = []
         if now >= self._next_status:
-            messages.append(Status(state="running", model=self.model, user=self.user))
+            level = self.assistance.value(now) if self.assistance is not None else None
+            messages.append(
+                Status(state="running", model=self.model, user=self.user, assistance=level)
+            )
             self._next_status = max(self._next_status + self.status_period, now)
+        if self.scores is not None and now >= self._next_score:
+            self.scores.user = self.user
+            messages.append(self.scores.score(now))
+            self._next_score = max(self._next_score + self.score_period, now)
         if self._action_pending:
             self._action_pending = False
             messages.append(self._command("action", now))
@@ -413,9 +535,11 @@ __all__ = [
     "COMMANDS",
     "DEFAULT_CHANNELS",
     "KEY_COMMANDS",
+    "AssistanceSchedule",
     "CommandSimulator",
     "FakeBandPower",
     "HoldTracker",
+    "ScoreSimulator",
     "Script",
     "ScriptPlayer",
     "ScriptStep",

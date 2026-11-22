@@ -57,6 +57,22 @@ Every trial gets the three markers, including a trial cut short by Escape.
 
 Space or Enter starts a session, Escape stops it.
 
+### Testing the stages without Core
+
+`openmind-sandbox keys` can announce the assistance and publish scores, as Core
+does during a calibration (see [keys](keys.md#calibration-feedback)):
+
+```bash
+openmind-sandbox keys --assistance-ramp 120 --score-every 2
+```
+
+With the stage on *automatic*, the bird scene goes through *discovery*
+(assistance above 0.66), *transition* (0.66 to 0.33) then *thought* (0.33 or
+less) as the assistance falls, and the footer shows the score, with `ready` once the
+thresholds (0.70 per command, at most 0.10 false starts, 2 stable blocks) are met.
+Use `--assistance 1`, `0.5` or `0` to stay on one stage. The headless tests check
+that `stage_for()` picks the expected stage for 1.0, 0.5 and 0.0.
+
 ## Checking the markers in LSL
 
 With the broker and the bridge running, play a short protocol without a window
