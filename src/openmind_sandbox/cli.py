@@ -427,6 +427,14 @@ def bridge(
     eeg: Annotated[
         bool, typer.Option(help="Relay the LSL EEG stream to the cockpit signal panel.")
     ] = False,
+    log: Annotated[
+        Path | None,
+        typer.Option(
+            dir_okay=False,
+            help="Append every message (except band power) to this JSON-lines file, "
+            "for `openmind-sandbox report`.",
+        ),
+    ] = None,
     verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Log every client.")] = False,
 ) -> None:
     """Relay protocol messages between MQTT and WebSocket clients (Godot), markers to LSL."""
@@ -439,13 +447,14 @@ def bridge(
         level=logging.INFO if verbose else logging.WARNING,
         format="%(asctime)s %(levelname)s %(message)s",
     )
-    gateway = Bridge(host, port, ws_host=ws_host, ws_port=ws_port, lsl=lsl, eeg=eeg)
+    gateway = Bridge(host, port, ws_host=ws_host, ws_port=ws_port, lsl=lsl, eeg=eeg, log_path=log)
 
     def ready() -> None:
         typer.echo(
             f"Bridge: MQTT {host}:{port} <-> ws://{ws_host}:{gateway.ws_port}"
             + (" -> LSL openmind-markers" if lsl else "")
             + (", relaying LSL openmind-eeg" if eeg else "")
+            + (f", logging to {log}" if log is not None else "")
             + ". Ctrl+C to stop."
         )
 
@@ -464,6 +473,29 @@ def bridge(
         raise typer.Exit(1) from error
     except KeyboardInterrupt:
         typer.echo("Bridge stopped.")
+
+
+@app.command()
+def report(
+    log: Annotated[
+        Path, typer.Argument(exists=True, dir_okay=False, help="JSON-lines log of the bridge.")
+    ],
+    as_json: Annotated[bool, typer.Option("--json", help="Print JSON instead of text.")] = False,
+) -> None:
+    """Summarise the course runs of an events log (twin, mock robot or real robot).
+
+    The log is written by `openmind-sandbox bridge --log FILE`.
+    """
+    import json
+
+    from openmind_sandbox.report import format_report, load_report
+
+    try:
+        result = load_report(log)
+    except (OSError, UnicodeDecodeError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from error
+    typer.echo(json.dumps(result.to_dict(), indent=2) if as_json else format_report(result))
 
 
 if __name__ == "__main__":  # pragma: no cover

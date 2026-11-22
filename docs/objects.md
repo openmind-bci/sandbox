@@ -72,6 +72,10 @@ Events, with `"object": "robot-twin"`:
 | `waypoint` | waypoint reached | `course`, `index` (from 0), `time_s` |
 | `finish` | last waypoint | `course`, `time_s`, `errors`, `collisions_avoided` |
 
+To compare runs (twin, mock robot, real robot), record them with
+`openmind-sandbox bridge --log FILE` and summarise them with
+`openmind-sandbox report FILE`: see [Course report](report.md).
+
 ## Boat (Godot)
 
 An 8 m sailing yacht at sea (`scenarios/courses/boat_sea.yaml`: open water to the

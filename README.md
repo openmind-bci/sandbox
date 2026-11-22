@@ -181,6 +181,7 @@ uv run openmind-sandbox keys --script examples/keys-demo.yaml --bandpower
 | [Keyboard simulator](docs/keys.md) | Commands and band power without a decoder |
 | [Objects and mock robot](docs/objects.md) | Safety rules shared by every object |
 | [Create your object](docs/create-your-object.md) | Connect your own object in 10 minutes (adapter template) |
+| [Course report](docs/report.md) | Summarise runs from an events log (twin or real robot) |
 | [Robot configuration](docs/robot-config.md) | `robot.yaml`, shared by firmware, twin and mock |
 | [Firmware](docs/firmware.md) | ESP32 robot firmware |
 | [Robot hardware](docs/hardware/robot.md) | Parts, wiring, flashing and validation of the real robot |

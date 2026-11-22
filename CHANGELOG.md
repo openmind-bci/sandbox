@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `openmind-sandbox report <events.jsonl> [--json]` summarises the course runs
+  of an events log (duration, waypoints, errors, obstacle and safety stops,
+  commands, average speed), and `openmind-sandbox bridge --log FILE` records
+  the messages as JSON lines. See `docs/report.md`.
 - Robot hardware guide `docs/hardware/robot.md`: parts, wiring, flashing and
   the validation procedure of SBX-090.
 - Opt-in confirmation of `action` in `Adapter` (`confirm_action`,
