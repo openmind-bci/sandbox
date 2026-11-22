@@ -13,7 +13,11 @@ here and cannot be overridden (see ``docs/protocol.md`` of OpenMind Core, sectio
 4. ``action`` is contextual: it is forwarded only when
    :meth:`Adapter.context_allows_action` says so;
 5. an invalid message is logged and ignored (the heartbeat rule still protects
-   the object if the decoder is gone).
+   the object if the decoder is gone);
+6. optionally (``confirm_action=True``), ``action`` needs two accepted commands
+   within ``confirm_window_s``: the first only arms it (event ``action_armed``,
+   hook :meth:`Adapter.on_action_armed`), the second executes it (event
+   ``action_confirmed``). Anything else cancels it (event ``action_cancelled``).
 
 The adapter takes its time from an injectable clock and publishes through an
 injectable callable, so it is tested without a broker.
@@ -58,6 +62,10 @@ class Adapter(ABC):
         publish: Called with every message to publish (``MqttLink.publish`` in
             :meth:`run`). Without it, events are dropped.
         clock: Monotonic time source, for tests.
+        confirm_action: Require a second ``action`` within ``confirm_window_s``
+            before :meth:`on_action` runs. Off by default; recommended for objects
+            acting in the real world when the action cannot be undone.
+        confirm_window_s: Seconds during which the second ``action`` confirms.
     """
 
     def __init__(
@@ -66,8 +74,15 @@ class Adapter(ABC):
         min_confidence: float = 0.7,
         publish: Callable[[Message], None] | None = None,
         clock: Callable[[], float] = time.monotonic,
+        confirm_action: bool = False,
+        confirm_window_s: float = 3.0,
     ) -> None:
+        if confirm_window_s <= 0:
+            raise ValueError("confirm_window_s must be positive")
         self.name = name
+        self.confirm_action = confirm_action
+        self.confirm_window_s = confirm_window_s
+        self._armed_until: float | None = None
         self._publish = publish
         self._clock = clock
         # Thresholds are applied here (rest is exempt), so the watchdog only
@@ -101,6 +116,13 @@ class Adapter(ABC):
         """Apply ``action`` (only called when the context allows it)."""
         self.on_command("action", confidence)
 
+    def on_action_armed(self) -> None:  # noqa: B027 - optional hook, no-op default
+        """Called when a first ``action`` armed the confirmation (default: nothing).
+
+        Use it for a cue (light, beep) telling the user to repeat ``action`` within
+        ``confirm_window_s`` seconds. Only used when ``confirm_action`` is true.
+        """
+
     def context_allows_action(self) -> bool:
         """Whether ``action`` makes sense now (e.g. in front of a door).
 
@@ -110,6 +132,12 @@ class Adapter(ABC):
         return False
 
     # -- safety, not overridable ---------------------------------------------------
+
+    @final
+    @property
+    def action_armed(self) -> bool:
+        """Whether a first ``action`` is waiting for its confirmation."""
+        return self._armed_until is not None
 
     @final
     @property
@@ -142,7 +170,10 @@ class Adapter(ABC):
         del now
         with self._lock:
             if not self._watchdog.alive:
+                self._cancel_armed("heartbeat_lost")
                 self._enter_safe_state()
+            elif self._armed_until is not None and self._clock() >= self._armed_until:
+                self._cancel_armed("timeout")
 
     @final
     def emit_event(self, kind: str, data: dict[str, Any] | None = None) -> None:
@@ -180,18 +211,31 @@ class Adapter(ABC):
             self._watchdog.reset_sequence()
         self._watchdog.on_status(status)
         if status.state != "running":
+            self._cancel_armed("decoder_not_running")
             self._enter_safe_state()
 
     def _on_command(self, command: Command) -> None:
         name = command.command
         if not self._watchdog.alive:
+            self._cancel_armed("heartbeat_lost")
             return
         if name != "rest" and command.confidence < self.min_confidence:
             return
         if not self._watchdog.accept(command):
             return  # stale or duplicate seq
-        if name == "action" and not self.context_allows_action():
-            return
+        if self._armed_until is not None and self._clock() >= self._armed_until:
+            self._cancel_armed("timeout")
+        if name == "action":
+            if not self.context_allows_action():
+                self._cancel_armed("context_lost")
+                return
+            if self.confirm_action and self._armed_until is None:
+                self._arm_action()
+                return
+        elif self._armed_until is not None:
+            self._cancel_armed("rest" if name == "rest" else "other_command")
+        confirmed = name == "action" and self._armed_until is not None
+        self._armed_until = None
         try:
             if name == "action":
                 self.on_action(command.confidence)
@@ -201,9 +245,26 @@ class Adapter(ABC):
             log.exception("command %r failed, stopping the object", name)
             self._enter_safe_state(force=True)
             return
+        if confirmed:
+            self.emit_event("action_confirmed")
         self._stopped = False  # stop() will run again on heartbeat loss
 
+    def _arm_action(self) -> None:
+        self._armed_until = self._clock() + self.confirm_window_s
+        self.emit_event("action_armed", {"window_s": self.confirm_window_s})
+        try:
+            self.on_action_armed()
+        except Exception:
+            log.exception("on_action_armed() failed")
+
+    def _cancel_armed(self, reason: str) -> None:
+        if self._armed_until is None:
+            return
+        self._armed_until = None
+        self.emit_event("action_cancelled", {"reason": reason})
+
     def _enter_safe_state(self, force: bool = False) -> None:
+        self._cancel_armed("stopped")
         if self._stopped and not force:
             return
         self._stopped = True

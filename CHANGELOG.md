@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Opt-in confirmation of `action` in `Adapter` (`confirm_action`,
+  `confirm_window_s`, hook `on_action_armed`, events `action_armed`,
+  `action_confirmed`, `action_cancelled`), documented in
+  `docs/create-your-object.md`.
 - Adapter base class (`openmind_sandbox.adapters.Adapter`) with the protocol
   safety rules built in and not overridable: no command before the first
   status, stop on heartbeat loss, low confidence and stale `seq` ignored,

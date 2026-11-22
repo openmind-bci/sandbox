@@ -24,9 +24,10 @@ class Clock:
 
 
 class Recorder(Adapter):
-    def __init__(self, clock: Clock, allow_action: bool = False) -> None:
+    def __init__(self, clock: Clock, allow_action: bool = False, confirm: bool = False) -> None:
         self.sent: list[Message] = []
-        super().__init__("recorder", clock=clock, publish=self.sent.append)
+        super().__init__("recorder", clock=clock, publish=self.sent.append, confirm_action=confirm)
+        self.armed_calls = 0
         self.commands: list[tuple[str, float]] = []
         self.stops = 0
         self.allow_action = allow_action
@@ -39,6 +40,9 @@ class Recorder(Adapter):
 
     def context_allows_action(self) -> bool:
         return self.allow_action
+
+    def on_action_armed(self) -> None:
+        self.armed_calls += 1
 
 
 class Feeder:
@@ -57,6 +61,10 @@ class Feeder:
             seq = self.seq
         message = Command(command=name, confidence=confidence, user="P00", seq=seq)
         self.adapter.handle_message(topic_of(message), encode(message))
+
+
+def kinds(adapter: Recorder) -> list[str]:
+    return [m.kind for m in adapter.sent if isinstance(m, Event)]
 
 
 @pytest.fixture
@@ -243,3 +251,138 @@ def test_template_adapter_works_unchanged(clock: Clock, capsys: pytest.CaptureFi
     assert "forward (0.90)" in out
     assert "left" not in out
     assert out.strip().endswith("stop")
+
+
+@pytest.fixture
+def confirming(clock: Clock) -> Recorder:
+    return Recorder(clock, allow_action=True, confirm=True)
+
+
+def running(adapter: Recorder, clock: Clock) -> Feeder:
+    feed = Feeder(adapter, clock)
+    feed.status()
+    return feed
+
+
+def test_action_not_confirmed_by_default(clock: Clock) -> None:
+    adapter = Recorder(clock, allow_action=True)
+    feed = running(adapter, clock)
+    feed.command("action")
+    assert adapter.commands == [("action", 0.95)]
+    assert kinds(adapter) == []
+
+
+def test_confirmation_arms_then_executes(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    assert confirming.commands == []
+    assert confirming.action_armed
+    assert confirming.armed_calls == 1
+    clock.now += 2.0
+    feed.status()
+    feed.command("action")
+    assert confirming.commands == [("action", 0.95)]
+    assert not confirming.action_armed
+    assert kinds(confirming) == ["action_armed", "action_confirmed"]
+    armed = confirming.sent[0]
+    assert isinstance(armed, Event) and armed.data == {"window_s": 3.0}
+
+
+def test_confirmation_expires_in_tick(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    clock.now += 1.0
+    feed.status()
+    confirming.tick()
+    assert confirming.action_armed
+    clock.now += 2.5
+    feed.status()
+    confirming.tick()
+    assert not confirming.action_armed
+    last = confirming.sent[-1]
+    assert isinstance(last, Event)
+    assert (last.kind, last.data) == ("action_cancelled", {"reason": "timeout"})
+    feed.command("action")  # arms again, does not execute
+    assert confirming.commands == []
+
+
+def test_late_second_action_only_rearms(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    clock.now += 3.5
+    feed.status()
+    feed.command("action")
+    assert confirming.commands == []
+    assert kinds(confirming) == ["action_armed", "action_cancelled", "action_armed"]
+
+
+@pytest.mark.parametrize(
+    ("other", "reason"), [("forward", "other_command"), ("left", "other_command"), ("rest", "rest")]
+)
+def test_other_command_cancels(
+    confirming: Recorder, clock: Clock, other: CommandName, reason: str
+) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    feed.command(other)
+    assert confirming.commands == [(other, 0.95)]
+    last = [m for m in confirming.sent if isinstance(m, Event)][-1]
+    assert last.kind == "action_cancelled" and last.data == {"reason": reason}
+    feed.command("action")
+    assert [c for c, _ in confirming.commands] == [other]  # armed again, not executed
+
+
+def test_low_confidence_command_does_not_cancel(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    feed.command("forward", confidence=0.1)
+    assert confirming.action_armed
+
+
+def test_heartbeat_loss_cancels(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    clock.now += 2.5
+    confirming.tick()
+    assert not confirming.action_armed
+    events = [m for m in confirming.sent if isinstance(m, Event)]
+    assert events[-1].data == {"reason": "heartbeat_lost"}
+    feed.status()
+    feed.command("action")
+    assert confirming.commands == []
+
+
+def test_decoder_not_running_cancels(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    feed.status("calibrating")
+    events = [m for m in confirming.sent if isinstance(m, Event)]
+    assert events[-1].data == {"reason": "decoder_not_running"}
+    assert not confirming.action_armed
+
+
+def test_context_lost_cancels(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    confirming.allow_action = False
+    feed.command("action")
+    events = [m for m in confirming.sent if isinstance(m, Event)]
+    assert events[-1].data == {"reason": "context_lost"}
+    assert confirming.commands == []
+
+
+def test_confirmation_needs_context_to_arm(clock: Clock) -> None:
+    adapter = Recorder(clock, allow_action=False, confirm=True)
+    feed = running(adapter, clock)
+    feed.command("action")
+    assert not adapter.action_armed
+    assert kinds(adapter) == []
+
+
+def test_confirm_window_must_be_positive(clock: Clock) -> None:
+    class Dummy(Recorder):
+        def __init__(self) -> None:
+            Adapter.__init__(self, "bad", clock=clock, confirm_window_s=0.0)
+
+    with pytest.raises(ValueError):
+        Dummy()

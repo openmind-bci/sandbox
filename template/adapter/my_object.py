@@ -25,6 +25,10 @@ class MyObject(Adapter):
     def __init__(self) -> None:
         # The name appears in the events published for dashboards.
         # min_confidence: commands below it are dropped by the base class.
+        # For an object acting in the real world with an action that cannot be
+        # undone, also pass confirm_action=True: the first "action" only arms it
+        # (override on_action_armed() for a light or sound cue) and a second one
+        # within confirm_window_s seconds (default 3) executes it.
         super().__init__("my-object", min_confidence=0.8)
 
     def on_command(self, command: str, confidence: float) -> None:

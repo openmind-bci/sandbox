@@ -19,6 +19,28 @@ and cannot be switched off by a subclass:
   true (default: false);
 - an invalid message is logged and ignored.
 
+## Confirming `action` (optional)
+
+For an object acting in the real world, when the action cannot be undone (open a
+door, toggle mains power, release something), ask for a confirmation:
+
+```python
+super().__init__("my-object", confirm_action=True, confirm_window_s=3.0)
+```
+
+The first accepted `action` then does not run `on_action`: the adapter is
+"armed", publishes the event `action_armed` (`window_s`) and calls
+`on_action_armed()` (override it for a light or sound cue; default: nothing). A
+second `action` within the window runs `on_action` and publishes
+`action_confirmed`. Any other accepted command (including `rest`), a lost
+heartbeat, a decoder that is not `running`, a context that no longer allows the
+action, or the end of the window cancels it with `action_cancelled` (`reason`:
+`other_command`, `rest`, `heartbeat_lost`, `decoder_not_running`,
+`context_lost`, `timeout`, `stopped`). The safety rules above still come first.
+
+Off by default. The wheeled robot does not use it: its `action` (a U-turn) is
+bounded and stopped by the obstacle sensor.
+
 ## Steps
 
 1. Copy [`template/adapter/`](../template/adapter/) and rename `my_object.py`.
@@ -50,6 +72,7 @@ as it is: a lamp has no motion, so its safe state is "no change". Read
 - [ ] Tested by killing the simulator: the object stops within 2 s.
 - [ ] `action` has a real-world effect? Keep `context_allows_action()` false
       until a sensor or a confirmation makes it clearly safe.
+- [ ] Irreversible real-world `action`? Consider `confirm_action=True`.
 - [ ] `on_command` returns quickly (it runs on the network thread).
 - [ ] The object also has its own hardware limits (end stops, current limit):
       the adapter is not the last line of defence.
