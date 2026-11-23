@@ -29,7 +29,8 @@ import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Final
+from pathlib import Path
+from typing import IO, Any, Final
 
 import openmind_protocol
 from openmind_protocol import Event, Marker, Message, ProtocolError, decode, decode_topic, topics
@@ -126,6 +127,31 @@ def lsl_timestamp(marker_ts: float, wall_now: float, lsl_now: float) -> float:
     return lsl_now
 
 
+#: Topics left out of the log: band power is ~10 Hz and useless for a report.
+UNLOGGED_TOPICS: Final = frozenset({topics.BANDPOWER})
+
+
+class JsonlLog:
+    """Append-only JSON-lines file of protocol messages (one line, flushed at once)."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self._file: IO[str] = path.open("a", encoding="utf-8")
+
+    def append(self, topic: str, message: Message) -> None:
+        """Write ``message`` unless its topic is in :data:`UNLOGGED_TOPICS`."""
+        if topic in UNLOGGED_TOPICS:
+            return
+        # "received" is the wall-clock time of the bridge: the real robot has no
+        # clock before NTP, so its own ``ts`` may be 0.
+        line = envelope(topic, message)[:-1] + f',"received":{time.time():.6f}' + "}\n"
+        self._file.write(line)
+        self._file.flush()
+
+    def close(self) -> None:
+        self._file.close()
+
+
 # --- LSL outlet ------------------------------------------------------------------
 
 
@@ -179,6 +205,8 @@ class Bridge:
         ws_port: WebSocket port; ``0`` picks a free one (see :attr:`ws_port`).
         lsl: Publish received markers on the LSL markers stream.
         eeg: Relay the LSL EEG stream ``openmind-eeg`` to the clients (read only).
+        log_path: Append every message seen on MQTT (except band power) to this
+            JSON-lines file, for ``openmind-sandbox report``.
     """
 
     mqtt_host: str = DEFAULT_HOST
@@ -187,12 +215,14 @@ class Bridge:
     ws_port: int = DEFAULT_WS_PORT
     lsl: bool = True
     eeg: bool = False
+    log_path: Path | None = None
     stats: BridgeStats = field(default_factory=BridgeStats)
     _clients: set[ServerConnection] = field(default_factory=set, init=False, repr=False)
     _loop: asyncio.AbstractEventLoop | None = field(default=None, init=False, repr=False)
     _stop: asyncio.Event | None = field(default=None, init=False, repr=False)
     _link: MqttLink | None = field(default=None, init=False, repr=False)
     _outlet: MarkerOutlet | None = field(default=None, init=False, repr=False)
+    _log: JsonlLog | None = field(default=None, init=False, repr=False)
 
     async def run(self, on_ready: Callable[[], None] | None = None) -> None:
         """Connect to the broker, serve WebSocket clients until :meth:`stop`.
@@ -204,6 +234,8 @@ class Bridge:
         self._stop = asyncio.Event()
         if self.lsl:
             self._outlet = MarkerOutlet()
+        if self.log_path is not None:
+            self._log = JsonlLog(self.log_path)
         self._link = MqttLink(
             self.mqtt_host,
             self.mqtt_port,
@@ -230,6 +262,9 @@ class Bridge:
             if relay is not None:
                 relay.stop()
             self._link.close()
+            if self._log is not None:
+                self._log.close()
+                self._log = None
 
     def stop(self) -> None:
         """Ask :meth:`run` to return; safe to call from any thread."""
@@ -246,6 +281,11 @@ class Bridge:
             log.warning("Dropped MQTT message on %s: %s", topic, error)
             return
         self.stats.relayed += 1
+        if self._log is not None:
+            try:
+                self._log.append(topic, message)
+            except OSError as error:
+                log.warning("Could not write the log: %s", error)
         self._broadcast_threadsafe(envelope(topic, message))
 
     def _on_mqtt_connection(self, connected: bool) -> None:

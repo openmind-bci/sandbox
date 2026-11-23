@@ -3,13 +3,24 @@
 from pathlib import Path
 
 import pytest
-from openmind_protocol import BandPower, Command, Message, Status, decode_topic, encode, topic_of
+from openmind_protocol import (
+    BandPower,
+    Command,
+    Message,
+    Score,
+    Status,
+    decode_topic,
+    encode,
+    topic_of,
+)
 
 from openmind_sandbox.keyboard_sim import (
     DEFAULT_CHANNELS,
+    AssistanceSchedule,
     CommandSimulator,
     FakeBandPower,
     HoldTracker,
+    ScoreSimulator,
     Script,
     ScriptPlayer,
     motor_weight,
@@ -254,3 +265,81 @@ def test_band_power_messages_conform_to_the_protocol(command: str) -> None:
         decoded = roundtrip(message)
         assert isinstance(decoded, BandPower)
         assert [c.label for c in decoded.channels] == list(DEFAULT_CHANNELS)
+
+
+# --- Calibration feedback --------------------------------------------------------
+
+
+def statuses(messages: list[Message]) -> list[Status]:
+    return [m for m in messages if isinstance(m, Status)]
+
+
+def scores(messages: list[Message]) -> list[Score]:
+    return [m for m in messages if isinstance(m, Score)]
+
+
+def test_no_assistance_nor_score_by_default() -> None:
+    messages = run(CommandSimulator(), 3.0)
+    assert all(s.assistance is None for s in statuses(messages))
+    assert not scores(messages)
+
+
+def test_fixed_assistance_is_in_every_status() -> None:
+    simulator = CommandSimulator(assistance=AssistanceSchedule(fixed=0.5))
+    found = statuses([roundtrip(m) for m in run(simulator, 2.0)])
+    assert found
+    assert {s.assistance for s in found} == {0.5}
+
+
+def test_assistance_ramp_follows_a_fake_clock() -> None:
+    schedule = AssistanceSchedule(ramp_s=10.0)
+    assert schedule.value(100.0) == 1.0  # the ramp starts at the first call
+    assert schedule.value(102.5) == 0.75
+    assert schedule.value(105.0) == 0.5
+    assert schedule.value(110.0) == 0.0
+    assert schedule.value(500.0) == 0.0
+
+
+def test_ramp_in_published_status_decreases_to_zero() -> None:
+    simulator = CommandSimulator(assistance=AssistanceSchedule(ramp_s=4.0))
+    levels = [s.assistance for s in statuses([roundtrip(m) for m in run(simulator, 6.0)])]
+    assert levels[0] == 1.0
+    assert levels[-1] == 0.0
+    assert levels == sorted(levels, reverse=True)
+
+
+def test_invalid_assistance_is_refused() -> None:
+    with pytest.raises(ValueError):
+        AssistanceSchedule(fixed=1.5)
+    with pytest.raises(ValueError):
+        AssistanceSchedule(ramp_s=0)
+
+
+def test_scores_are_published_every_period_and_valid() -> None:
+    simulator = CommandSimulator(scores=ScoreSimulator(duration_s=20.0), score_period=2.0)
+    found = scores([roundtrip(m) for m in run(simulator, 10.0)])
+    assert 5 <= len(found) <= 6
+    assert all(s.user == "P00" for s in found)
+
+
+def test_score_rises_and_becomes_ready_only_with_thresholds_met() -> None:
+    sim = ScoreSimulator(duration_s=60.0, block_s=10.0)
+    first = sim.score(0.0)
+    assert not first.ready
+    assert min(first.per_command.values()) < 0.5
+    assert first.stable_blocks == 0
+    previous = first.overall
+    ready_at = None
+    for t in range(1, 200):
+        current = sim.score(float(t))
+        assert current.overall >= previous
+        previous = current.overall
+        if current.ready:
+            ready_at = t
+            assert min(current.per_command.values()) >= 0.70
+            assert current.false_start_rate <= 0.10
+            assert current.stable_blocks >= 2
+            break
+    assert ready_at is not None
+    assert ready_at > 60 * 0.5  # not before the thresholds are crossed
+    assert sim.score(float(ready_at + 50)).ready

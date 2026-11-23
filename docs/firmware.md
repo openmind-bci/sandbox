@@ -44,6 +44,7 @@ The U-turn is timed (no wheel encoder). Thresholds are compiled from
 `robot.yaml` and cannot be changed over the network. Telemetry is published on
 `openmind/v1/events` with `"object": "robot"` at `telemetry.rate_hz`.
 
-Pins (to be confirmed with the wiring diagram of SBX-090): STBY 27; left motor
+Parts, wiring diagram, flashing and the validation procedure are in the
+[hardware guide](hardware/robot.md). Pins: STBY 27; left motor
 PWM 25, AIN1 33, AIN2 32; right motor PWM 26, BIN1 14, BIN2 12; HC-SR04 TRIG 5,
 ECHO 18 (through a voltage divider: the ESP32 is not 5 V tolerant).

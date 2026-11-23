@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `dev/run-chain.sh`: starts the broker, a synthetic or replayed EEG source, the
+  decoder and the mock robot (or the cockpit gateway) in one command, with logs
+  and a `--check` mode that summarises commands, statuses and decoder latency;
+  see `docs/full-chain.md`.
+- "Live sources" section of `docs/brain-panel.md`: feed the 3D brain from the
+  synthetic source or a public replay through `openmind-core bandpower`.
+- `openmind-sandbox keys --assistance VALUE | --assistance-ramp SECONDS` and
+  `--score-every SECONDS` simulate the calibration feedback of the decoder
+  (assistance in `status`, simulated `score`), to test the bird stages and the
+  score panel; documented in `docs/keys.md` and `docs/calibration.md`.
+- `openmind-sandbox report <events.jsonl> [--json]` summarises the course runs
+  of an events log (duration, waypoints, errors, obstacle and safety stops,
+  commands, average speed), and `openmind-sandbox bridge --log FILE` records
+  the messages as JSON lines. See `docs/report.md`.
+- Robot hardware guide `docs/hardware/robot.md`: parts, wiring, flashing and
+  the validation procedure of SBX-090.
+- Opt-in confirmation of `action` in `Adapter` (`confirm_action`,
+  `confirm_window_s`, hook `on_action_armed`, events `action_armed`,
+  `action_confirmed`, `action_cancelled`), documented in
+  `docs/create-your-object.md`.
+- Adapter base class (`openmind_sandbox.adapters.Adapter`) with the protocol
+  safety rules built in and not overridable: no command before the first
+  status, stop on heartbeat loss, low confidence and stale `seq` ignored,
+  contextual `action`. Subclasses only implement `on_command` and `stop`.
+- Lamp example adapter driven through a local HTTP API, a fake lamp server,
+  and the commands `openmind-sandbox adapter lamp` and `fake-lamp`.
+- `template/adapter/` to copy for a new object, and the guide
+  `docs/create-your-object.md` (connect your object in 10 minutes).
 - README clips of the cockpit in demo mode (animated WebP in `docs/media/`),
   recorded by `tools/record_demo.gd` and encoded by `tools/make_demo_media.py`.
 - Demo mode in the cockpit (Start demo, Ctrl+D): a built-in simulated decoder

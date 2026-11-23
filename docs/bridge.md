@@ -10,6 +10,9 @@ openmind-sandbox bridge                      # ws://127.0.0.1:8780, LSL on
 openmind-sandbox bridge --ws-port 9000 --no-lsl -v
 ```
 
+`--log FILE` also appends every message to a JSON-lines file, for
+[`openmind-sandbox report`](report.md).
+
 The WebSocket listens on `127.0.0.1` (this machine only) unless `--ws-host` says
 otherwise. There is no authentication: as for the development broker, keep it
 on a trusted network.

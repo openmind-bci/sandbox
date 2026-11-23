@@ -29,6 +29,13 @@ mistake). They can be changed per scene in the cockpit (command panel), with
 `mock-robot --threshold action=0.9`, or in `robot.yaml`; the real robot keeps the
 values compiled from `robot.yaml` and never takes new ones over the network.
 
+## Your own object
+
+To connect another object (a lamp, a toy, a game), subclass `Adapter`: it applies
+the safety rules above for you. See [Create your object](create-your-object.md).
+The mock robot predates it and has its own copy of these rules; it could later be
+rebuilt on `Adapter`.
+
 ## Robot twin (Godot)
 
 The first scene of the [cockpit](cockpit.md): the robot of
@@ -64,6 +71,10 @@ Events, with `"object": "robot-twin"`:
 | `start` | first movement | `course` |
 | `waypoint` | waypoint reached | `course`, `index` (from 0), `time_s` |
 | `finish` | last waypoint | `course`, `time_s`, `errors`, `collisions_avoided` |
+
+To compare runs (twin, mock robot, real robot), record them with
+`openmind-sandbox bridge --log FILE` and summarise them with
+`openmind-sandbox report FILE`: see [Course report](report.md).
 
 ## Boat (Godot)
 

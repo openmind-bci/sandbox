@@ -349,9 +349,11 @@ func test_calibration_protocol() -> void:
 	check(again.map(func(m: Array) -> String: return m[2]) == markers.map(
 			func(m: Array) -> String: return m[2]), "a seed makes the order reproducible")
 
+	check(protocol.stage_for(1.0)["id"] == "discovery", "assistance 1.0 -> discovery")
 	check(protocol.stage_for(0.9)["id"] == "discovery", "assistance 0.9 -> discovery")
 	check(protocol.stage_for(0.5)["id"] == "transition", "assistance 0.5 -> transition")
 	check(protocol.stage_for(0.1)["id"] == "thought", "assistance 0.1 -> thought")
+	check(protocol.stage_for(0.0)["id"] == "thought", "assistance 0.0 -> thought")
 	protocol.block = 2
 	check(protocol.stage_for(-1.0)["id"] == "transition", "no assistance: stage of the block")
 

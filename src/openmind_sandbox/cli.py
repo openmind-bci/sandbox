@@ -13,6 +13,8 @@ from openmind_protocol import Command, Message, ProtocolError, Status, decode_to
 
 import openmind_sandbox
 from openmind_sandbox import keyboard
+from openmind_sandbox.adapters.examples.fake_lamp import DEFAULT_LAMP_PORT, FakeLampServer
+from openmind_sandbox.adapters.examples.lamp import DEFAULT_URL, LampAdapter
 from openmind_sandbox.bridge import DEFAULT_WS_PORT
 from openmind_sandbox.calibration import Calibration
 from openmind_sandbox.config import RobotConfig, with_thresholds
@@ -21,9 +23,11 @@ from openmind_sandbox.keyboard_sim import (
     ACTION_KEYS,
     DEFAULT_CHANNELS,
     KEY_COMMANDS,
+    AssistanceSchedule,
     CommandSimulator,
     FakeBandPower,
     HoldTracker,
+    ScoreSimulator,
     Script,
     ScriptPlayer,
 )
@@ -36,6 +40,12 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
 )
+
+adapter_app = typer.Typer(
+    help="Run an adapter: connect a real or virtual object to the commands.",
+    no_args_is_help=True,
+)
+app.add_typer(adapter_app, name="adapter")
 
 Host = Annotated[str, typer.Option(help="MQTT broker host.")]
 Port = Annotated[int, typer.Option(help="MQTT broker port.")]
@@ -86,6 +96,21 @@ def keys(
         Path | None,
         typer.Option(exists=True, dir_okay=False, help="Replay commands from a YAML script."),
     ] = None,
+    assistance: Annotated[
+        float | None,
+        typer.Option(min=0.0, max=1.0, help="Fixed assistance (0-1) announced in every status."),
+    ] = None,
+    assistance_ramp: Annotated[
+        float | None,
+        typer.Option(
+            min=0.1,
+            help="Assistance falling linearly from 1 to 0 over this many seconds, then 0.",
+        ),
+    ] = None,
+    score_every: Annotated[
+        float | None,
+        typer.Option(min=0.1, help="Publish a simulated score every this many seconds."),
+    ] = None,
     bandpower: Annotated[
         bool, typer.Option(help="Also publish fake band power messages (10 Hz).")
     ] = False,
@@ -101,10 +126,27 @@ def keys(
     """Simulate a live decoder from the keyboard or from a script.
 
     Publishes commands, a running status at 4 Hz and, with --bandpower, fake
-    band power messages, all validated against the OpenMind protocol.
+    band power messages, all validated against the OpenMind protocol. With
+    --assistance / --assistance-ramp and --score-every it also plays the
+    calibration feedback of the decoder (assistance in status, score).
     """
+    if assistance is not None and assistance_ramp is not None:
+        raise typer.BadParameter("use --assistance or --assistance-ramp, not both")
     try:
-        simulator = CommandSimulator(user=user, confidence=confidence)
+        schedule = (
+            AssistanceSchedule(ramp_s=assistance_ramp)
+            if assistance_ramp is not None
+            else AssistanceSchedule(fixed=assistance)
+            if assistance is not None
+            else None
+        )
+        simulator = CommandSimulator(
+            user=user,
+            confidence=confidence,
+            assistance=schedule,
+            scores=ScoreSimulator() if score_every is not None else None,
+            score_period=score_every if score_every is not None else 2.0,
+        )
         loaded = Script.load(script) if script is not None else None
         if loaded is not None and loaded.user is not None:
             simulator.user = loaded.user
@@ -324,6 +366,53 @@ def mock_robot(
         typer.echo("\nMock robot stopped.")
 
 
+@adapter_app.command("lamp")
+def adapter_lamp(
+    url: Annotated[str, typer.Option(help="Base URL of the lamp (local API only).")] = DEFAULT_URL,
+    broker: Annotated[str, typer.Option(help="MQTT broker as HOST or HOST:PORT.")] = DEFAULT_HOST,
+    min_confidence: Annotated[
+        float, typer.Option(min=0.0, max=1.0, help="Commands below this are ignored.")
+    ] = 0.7,
+) -> None:
+    """Example adapter: toggle and dim a lamp through its local HTTP API.
+
+    action toggles, left/right dim, rest keeps the state. Try it with
+    `openmind-sandbox fake-lamp` and `openmind-sandbox keys`.
+    """
+    host, _, port_text = broker.partition(":")
+    try:
+        port = int(port_text) if port_text else DEFAULT_PORT
+    except ValueError as error:
+        raise typer.BadParameter("expected HOST or HOST:PORT", param_hint="--broker") from error
+    link = MqttLink(host or DEFAULT_HOST, port, name="openmind-lamp")
+    lamp = LampAdapter(url=url, min_confidence=min_confidence)
+    typer.echo(f"Lamp adapter on {url} (broker {host}:{port}). Ctrl+C to stop.")
+    try:
+        lamp.run(link)
+    except BrokerUnavailableError as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(1) from error
+
+
+@app.command("fake-lamp")
+def fake_lamp(
+    port: Annotated[int, typer.Option(help="TCP port to listen on.")] = DEFAULT_LAMP_PORT,
+) -> None:
+    """Run a fake lamp with a local HTTP API, to try the lamp adapter."""
+    try:
+        server = FakeLampServer(port)
+    except OSError as error:
+        typer.echo(f"cannot listen on port {port}: {error}", err=True)
+        raise typer.Exit(1) from error
+    typer.echo(f"Fake lamp on http://127.0.0.1:{port}/light. Ctrl+C to stop.")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
 @app.command("export-godot")
 def export_godot(
     root: Annotated[
@@ -372,6 +461,14 @@ def bridge(
     eeg: Annotated[
         bool, typer.Option(help="Relay the LSL EEG stream to the cockpit signal panel.")
     ] = False,
+    log: Annotated[
+        Path | None,
+        typer.Option(
+            dir_okay=False,
+            help="Append every message (except band power) to this JSON-lines file, "
+            "for `openmind-sandbox report`.",
+        ),
+    ] = None,
     verbose: Annotated[bool, typer.Option("--verbose", "-v", help="Log every client.")] = False,
 ) -> None:
     """Relay protocol messages between MQTT and WebSocket clients (Godot), markers to LSL."""
@@ -384,13 +481,14 @@ def bridge(
         level=logging.INFO if verbose else logging.WARNING,
         format="%(asctime)s %(levelname)s %(message)s",
     )
-    gateway = Bridge(host, port, ws_host=ws_host, ws_port=ws_port, lsl=lsl, eeg=eeg)
+    gateway = Bridge(host, port, ws_host=ws_host, ws_port=ws_port, lsl=lsl, eeg=eeg, log_path=log)
 
     def ready() -> None:
         typer.echo(
             f"Bridge: MQTT {host}:{port} <-> ws://{ws_host}:{gateway.ws_port}"
             + (" -> LSL openmind-markers" if lsl else "")
             + (", relaying LSL openmind-eeg" if eeg else "")
+            + (f", logging to {log}" if log is not None else "")
             + ". Ctrl+C to stop."
         )
 
@@ -409,6 +507,29 @@ def bridge(
         raise typer.Exit(1) from error
     except KeyboardInterrupt:
         typer.echo("Bridge stopped.")
+
+
+@app.command()
+def report(
+    log: Annotated[
+        Path, typer.Argument(exists=True, dir_okay=False, help="JSON-lines log of the bridge.")
+    ],
+    as_json: Annotated[bool, typer.Option("--json", help="Print JSON instead of text.")] = False,
+) -> None:
+    """Summarise the course runs of an events log (twin, mock robot or real robot).
+
+    The log is written by `openmind-sandbox bridge --log FILE`.
+    """
+    import json
+
+    from openmind_sandbox.report import format_report, load_report
+
+    try:
+        result = load_report(log)
+    except (OSError, UnicodeDecodeError) as error:
+        typer.echo(str(error), err=True)
+        raise typer.Exit(2) from error
+    typer.echo(json.dumps(result.to_dict(), indent=2) if as_json else format_report(result))
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -87,6 +87,15 @@ class MqttLink:
             self.close()
             raise BrokerUnavailableError(self._unreachable("no answer"))
 
+    def set_handlers(
+        self,
+        on_message: MessageHandler | None = None,
+        on_connection_change: Callable[[bool], None] | None = None,
+    ) -> None:
+        """Set the callbacks after construction (call before :meth:`connect`)."""
+        self._on_message = on_message
+        self._on_connection_change = on_connection_change
+
     def subscribe(self, topics: Iterable[str]) -> None:
         """Subscribe to ``topics``, now and after every reconnection."""
         for topic in topics:
