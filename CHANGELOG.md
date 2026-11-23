@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `dev/run-chain.sh`: starts the broker, a synthetic or replayed EEG source, the
+  decoder and the mock robot (or the cockpit gateway) in one command, with logs
+  and a `--check` mode that summarises commands, statuses and decoder latency;
+  see `docs/full-chain.md`.
 - "Live sources" section of `docs/brain-panel.md`: feed the 3D brain from the
   synthetic source or a public replay through `openmind-core bandpower`.
 - `openmind-sandbox keys --assistance VALUE | --assistance-ramp SECONDS` and

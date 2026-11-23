@@ -156,6 +156,10 @@ uv run openmind-sandbox keys                     # arrows, space for action, q t
 godot --path godot
 ```
 
+**One command**: `dev/run-chain.sh --synthetic` starts the source, the decoder
+and the mock robot (and the broker when none is running); see
+[docs/full-chain.md](docs/full-chain.md).
+
 **Terminal only**: run the mock robot and drive it with the simulator; stop the
 simulator and the robot stops within 2 s.
 
