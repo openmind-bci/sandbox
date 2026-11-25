@@ -32,11 +32,13 @@ The first accepted `action` then does not run `on_action`: the adapter is
 "armed", publishes the event `action_armed` (`window_s`) and calls
 `on_action_armed()` (override it for a light or sound cue; default: nothing). A
 second `action` within the window runs `on_action` and publishes
-`action_confirmed`. Any other accepted command (including `rest`), a lost
-heartbeat, a decoder that is not `running`, a context that no longer allows the
-action, or the end of the window cancels it with `action_cancelled` (`reason`:
-`other_command`, `rest`, `heartbeat_lost`, `decoder_not_running`,
-`context_lost`, `timeout`, `stopped`). The safety rules above still come first.
+`action_confirmed`. `rest` keeps it armed (`rest` is still applied): the
+decoder repeats `rest` every 0.5 s between the two gestures. A movement command
+(`left`, `right`, `forward`), a lost heartbeat, a decoder that is not
+`running`, a context that no longer allows the action, or the end of the window
+cancels it with `action_cancelled` (`reason`: `other_command`,
+`heartbeat_lost`, `decoder_not_running`, `context_lost`, `timeout`,
+`stopped`). The safety rules above still come first.
 
 Off by default. The wheeled robot does not use it: its `action` (a U-turn) is
 bounded and stopped by the obstacle sensor.

@@ -316,20 +316,55 @@ def test_late_second_action_only_rearms(confirming: Recorder, clock: Clock) -> N
     assert kinds(confirming) == ["action_armed", "action_cancelled", "action_armed"]
 
 
-@pytest.mark.parametrize(
-    ("other", "reason"), [("forward", "other_command"), ("left", "other_command"), ("rest", "rest")]
-)
-def test_other_command_cancels(
-    confirming: Recorder, clock: Clock, other: CommandName, reason: str
-) -> None:
+@pytest.mark.parametrize("other", ["forward", "left", "right"])
+def test_movement_cancels(confirming: Recorder, clock: Clock, other: CommandName) -> None:
     feed = running(confirming, clock)
     feed.command("action")
     feed.command(other)
     assert confirming.commands == [(other, 0.95)]
     last = [m for m in confirming.sent if isinstance(m, Event)][-1]
-    assert last.kind == "action_cancelled" and last.data == {"reason": reason}
+    assert last.kind == "action_cancelled" and last.data == {"reason": "other_command"}
     feed.command("action")
     assert [c for c, _ in confirming.commands] == [other]  # armed again, not executed
+
+
+def test_repeated_rest_keeps_the_action_armed(confirming: Recorder, clock: Clock) -> None:
+    # core repeats rest every 0.5 s between the two gestures.
+    feed = running(confirming, clock)
+    feed.command("action")
+    for _ in range(4):
+        clock.now += 0.5
+        feed.status()
+        feed.command("rest", confidence=0.4)
+        confirming.tick()
+    assert confirming.action_armed
+    assert [c for c, _ in confirming.commands] == ["rest"] * 4  # rest is still applied
+    feed.command("action")
+    assert [c for c, _ in confirming.commands] == ["rest"] * 4 + ["action"]
+    assert kinds(confirming) == ["action_armed", "action_confirmed"]
+
+
+def test_rest_then_movement_cancels(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    feed.command("rest")
+    feed.command("forward")
+    assert not confirming.action_armed
+    feed.command("action")
+    assert [c for c, _ in confirming.commands] == ["rest", "forward"]  # armed again
+
+
+def test_rest_does_not_extend_the_window(confirming: Recorder, clock: Clock) -> None:
+    feed = running(confirming, clock)
+    feed.command("action")
+    clock.now += 2.0
+    feed.status()
+    feed.command("rest")
+    clock.now += 1.5
+    feed.status()
+    feed.command("rest")
+    assert not confirming.action_armed
+    assert kinds(confirming) == ["action_armed", "action_cancelled"]
 
 
 def test_low_confidence_command_does_not_cancel(confirming: Recorder, clock: Clock) -> None:
