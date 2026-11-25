@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `Adapter` with `confirm_action=True`: `rest` no longer cancels an armed
+  `action`. The decoder repeats `rest` every 0.5 s between the two gestures, so
+  the second `action` could never confirm with a real decoder. Only a movement
+  command, a timeout, a lost heartbeat or a stop cancels it; the `rest` reason
+  of `action_cancelled` is gone.
+
 ### Added
 
 - `dev/run-chain.sh`: starts the broker, a synthetic or replayed EEG source, the

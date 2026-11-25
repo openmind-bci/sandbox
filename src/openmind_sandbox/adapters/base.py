@@ -17,7 +17,9 @@ here and cannot be overridden (see ``docs/protocol.md`` of OpenMind Core, sectio
 6. optionally (``confirm_action=True``), ``action`` needs two accepted commands
    within ``confirm_window_s``: the first only arms it (event ``action_armed``,
    hook :meth:`Adapter.on_action_armed`), the second executes it (event
-   ``action_confirmed``). Anything else cancels it (event ``action_cancelled``).
+   ``action_confirmed``). A movement command, a timeout or a stop cancels it
+   (event ``action_cancelled``); ``rest`` does not, since the decoder repeats
+   ``rest`` between the two gestures.
 
 The adapter takes its time from an injectable clock and publishes through an
 injectable callable, so it is tested without a broker.
@@ -232,10 +234,13 @@ class Adapter(ABC):
             if self.confirm_action and self._armed_until is None:
                 self._arm_action()
                 return
-        elif self._armed_until is not None:
-            self._cancel_armed("rest" if name == "rest" else "other_command")
+        elif name != "rest":
+            # rest keeps the confirmation armed: the decoder repeats it between
+            # the two gestures, so only a movement cancels.
+            self._cancel_armed("other_command")
         confirmed = name == "action" and self._armed_until is not None
-        self._armed_until = None
+        if name == "action":
+            self._armed_until = None
         try:
             if name == "action":
                 self.on_action(command.confidence)
