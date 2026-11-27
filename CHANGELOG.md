@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Test of the `action` confirmation against the decoder's real cadence (output
+  recorded from OpenMind Core's `CommandEmitter`, in `tests/data/`), and the time
+  a user has to confirm documented in `docs/create-your-object.md`.
 - `dev/run-chain.sh`: starts the broker, a synthetic or replayed EEG source, the
   decoder and the mock robot (or the cockpit gateway) in one command, with logs
   and a `--check` mode that summarises commands, statuses and decoder latency;
