@@ -1,0 +1,527 @@
+{
+ "source": "openmind-core 208721e: CommandEmitter (repeat_s=0.5) and StatusEmitter (period_s=0.25), one rest decision per 0.25 s window, action decisions at 2.0 s and at the time given; status ts set to the simulated time",
+ "confirmed": [
+  {
+   "t": 0.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000000.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":0}"
+  },
+  {
+   "t": 0.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000000.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 0.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000000.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 0.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000000.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":1}"
+  },
+  {
+   "t": 0.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000000.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 0.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000000.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 1.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000001.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":2}"
+  },
+  {
+   "t": 1.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000001.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 1.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000001.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 1.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000001.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":3}"
+  },
+  {
+   "t": 1.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000001.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 1.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000001.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 2.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000002.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":4}"
+  },
+  {
+   "t": 2.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000002.0,\"command\":\"action\",\"confidence\":1.0,\"user\":\"P01\",\"seq\":5}"
+  },
+  {
+   "t": 2.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000002.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 2.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000002.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 2.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000002.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":6}"
+  },
+  {
+   "t": 2.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000002.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 2.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000002.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 3.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000003.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":7}"
+  },
+  {
+   "t": 3.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000003.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 3.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000003.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 3.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000003.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":8}"
+  },
+  {
+   "t": 3.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000003.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 3.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000003.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 4.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000004.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":9}"
+  },
+  {
+   "t": 4.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000004.0,\"command\":\"action\",\"confidence\":1.0,\"user\":\"P01\",\"seq\":10}"
+  },
+  {
+   "t": 4.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000004.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 4.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000004.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 4.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000004.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":11}"
+  },
+  {
+   "t": 4.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000004.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 4.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000004.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 5.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000005.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":12}"
+  },
+  {
+   "t": 5.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000005.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 5.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000005.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 5.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000005.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":13}"
+  },
+  {
+   "t": 5.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000005.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 5.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000005.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 6.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000006.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":14}"
+  },
+  {
+   "t": 6.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000006.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 6.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000006.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 6.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000006.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":15}"
+  },
+  {
+   "t": 6.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000006.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 6.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000006.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 7.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000007.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":16}"
+  },
+  {
+   "t": 7.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000007.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 7.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000007.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 7.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000007.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":17}"
+  },
+  {
+   "t": 7.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000007.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 7.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000007.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 8.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000008.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":18}"
+  },
+  {
+   "t": 8.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000008.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  }
+ ],
+ "too_late": [
+  {
+   "t": 0.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000000.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":0}"
+  },
+  {
+   "t": 0.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000000.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 0.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000000.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 0.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000000.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":1}"
+  },
+  {
+   "t": 0.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000000.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 0.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000000.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 1.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000001.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":2}"
+  },
+  {
+   "t": 1.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000001.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 1.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000001.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 1.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000001.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":3}"
+  },
+  {
+   "t": 1.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000001.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 1.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000001.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 2.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000002.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":4}"
+  },
+  {
+   "t": 2.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000002.0,\"command\":\"action\",\"confidence\":1.0,\"user\":\"P01\",\"seq\":5}"
+  },
+  {
+   "t": 2.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000002.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 2.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000002.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 2.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000002.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":6}"
+  },
+  {
+   "t": 2.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000002.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 2.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000002.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 3.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000003.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":7}"
+  },
+  {
+   "t": 3.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000003.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 3.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000003.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 3.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000003.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":8}"
+  },
+  {
+   "t": 3.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000003.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 3.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000003.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 4.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000004.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":9}"
+  },
+  {
+   "t": 4.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000004.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 4.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000004.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 4.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000004.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":10}"
+  },
+  {
+   "t": 4.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000004.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 4.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000004.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 5.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000005.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":11}"
+  },
+  {
+   "t": 5.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000005.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 5.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000005.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 5.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000005.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":12}"
+  },
+  {
+   "t": 5.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000005.5,\"command\":\"action\",\"confidence\":1.0,\"user\":\"P01\",\"seq\":13}"
+  },
+  {
+   "t": 5.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000005.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 5.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000005.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 6.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000006.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":14}"
+  },
+  {
+   "t": 6.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000006.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 6.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000006.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 6.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000006.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":15}"
+  },
+  {
+   "t": 6.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000006.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 6.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000006.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 7.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000007.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":16}"
+  },
+  {
+   "t": 7.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000007.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 7.25,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000007.25,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 7.5,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000007.5,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":17}"
+  },
+  {
+   "t": 7.5,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000007.5,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 7.75,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000007.75,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  },
+  {
+   "t": 8.0,
+   "topic": "openmind/v1/commands",
+   "payload": "{\"v\":1,\"ts\":1790000008.0,\"command\":\"rest\",\"confidence\":0.9,\"user\":\"P01\",\"seq\":18}"
+  },
+  {
+   "t": 8.0,
+   "topic": "openmind/v1/status",
+   "payload": "{\"v\":1,\"ts\":1790000008.0,\"state\":\"running\",\"model\":\"mi-baseline\",\"user\":\"P01\",\"assistance\":null,\"message\":null}"
+  }
+ ]
+}

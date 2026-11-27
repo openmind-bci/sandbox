@@ -42,6 +42,17 @@ end of the window cancels it with `action_cancelled` (`reason`: `other_command`,
 `heartbeat_lost`, `decoder_not_running`, `invalid_message`, `context_lost`,
 `timeout`, `stopped`). The safety rules above still come first.
 
+**How much time the user has.** With OpenMind Core, `action` is a double jaw
+clench, recognised about 0.15 s after the second clench ends. After recognising
+one, the detector ignores clenches for 1 s, and a double clench takes about 1 s to
+perform (two clenches of 0.2-0.4 s with a release of at least 0.3 s). So the
+second `action` arrives at the earliest about 2 s after the first, and with the
+default `confirm_window_s=3.0` the user must start the second double clench
+between 1 s and about 2 s after the first was recognised. Raise
+`confirm_window_s` if your users need more time. `tests/test_adapters.py`
+replays the decoder's real output (`rest` repeated every 0.5 s, then a second
+`action` 2 s or 3.5 s after the first) to check this.
+
 Off by default. The wheeled robot does not use it: its `action` (a U-turn) is
 bounded and stopped by the obstacle sensor.
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import threading
 from collections.abc import Iterator
 from pathlib import Path
@@ -450,3 +451,43 @@ def test_confirm_window_must_be_positive(clock: Clock) -> None:
 
     with pytest.raises(ValueError):
         Dummy()
+
+
+# --- confirmation against the real decoder cadence ---------------------------------
+
+EMITTER_CADENCE = Path(__file__).parent / "data" / "emitter_cadence.json"
+
+
+def replay_emitter(adapter: Recorder, clock: Clock, scenario: str) -> None:
+    """Feed messages recorded from core's CommandEmitter and StatusEmitter.
+
+    ``tests/data/emitter_cadence.json`` holds their output for a decoder that
+    decides ``rest`` every 0.25 s window: ``rest`` repeated every 0.5 s, a status
+    every 0.25 s and a one-off ``action`` at 2.0 s, then again at 4.0 s
+    (``confirmed``) or 5.5 s (``too_late``). See its ``source`` field.
+    """
+    messages = json.loads(EMITTER_CADENCE.read_text(encoding="utf-8"))[scenario]
+    start = clock.now
+    for message in messages:
+        clock.now = start + message["t"]
+        adapter.tick()
+        adapter.handle_message(message["topic"], message["payload"].encode())
+
+
+def test_action_is_confirmed_with_the_real_emitter_cadence(clock: Clock) -> None:
+    adapter = Recorder(clock, allow_action=True, confirm=True)
+    replay_emitter(adapter, clock, "confirmed")
+    # The rest commands repeated between the two gestures keep the action armed.
+    assert kinds(adapter) == ["action_armed", "action_confirmed"]
+    assert ("action", 1.0) in adapter.commands
+    assert adapter.commands.count(("rest", 0.9)) > 4
+
+
+def test_action_too_late_for_the_window_is_not_confirmed(clock: Clock) -> None:
+    adapter = Recorder(clock, allow_action=True, confirm=True)
+    replay_emitter(adapter, clock, "too_late")
+    # 3.5 s after the first action: the window (3 s) has closed, so the second
+    # action only arms a new confirmation.
+    assert kinds(adapter) == ["action_armed", "action_cancelled", "action_armed"]
+    assert adapter.sent[1].data == {"reason": "timeout"}  # type: ignore[union-attr]
+    assert ("action", 1.0) not in adapter.commands
