@@ -12,8 +12,10 @@ here and cannot be overridden (see ``docs/protocol.md`` of OpenMind Core, sectio
 3. commands whose ``seq`` is not newer than the last accepted one are ignored;
 4. ``action`` is contextual: it is forwarded only when
    :meth:`Adapter.context_allows_action` says so;
-5. an invalid message is logged and ignored (the heartbeat rule still protects
-   the object if the decoder is gone);
+5. an invalid message on an OpenMind topic stops the object, and commands are
+   refused until the next valid ``running`` status (the same rule as the mock
+   robot); a message on another topic is not addressed to the object and is
+   ignored;
 6. optionally (``confirm_action=True``), ``action`` needs two accepted commands
    within ``confirm_window_s``: the first only arms it (event ``action_armed``,
    hook :meth:`Adapter.on_action_armed`), the second executes it (event
@@ -92,6 +94,7 @@ class Adapter(ABC):
         self._watchdog = Watchdog(min_confidence=0.0, timeout=HEARTBEAT_TIMEOUT_S, clock=clock)
         self.min_confidence = min_confidence
         self._stopped = False
+        self._fault = False  # invalid message seen; cleared by a running status
         self._lock = threading.RLock()
 
     # -- hooks for subclasses ------------------------------------------------------
@@ -152,8 +155,15 @@ class Adapter(ABC):
         """Process a raw message received from the broker."""
         try:
             message = decode_topic(topic, payload)
-        except (ProtocolError, KeyError) as error:
-            log.warning("ignored invalid message on %s: %s", topic, error)
+        except KeyError as error:  # not an OpenMind topic: not addressed to us
+            log.warning("ignored message on %s: %s", topic, error)
+            return
+        except ProtocolError as error:
+            log.warning("invalid message on %s, stopping: %s", topic, error)
+            with self._lock:
+                self._fault = True
+                self._cancel_armed("invalid_message")
+                self._enter_safe_state()
             return
         with self._lock:
             if isinstance(message, Status):
@@ -212,7 +222,9 @@ class Adapter(ABC):
             # The decoder was silent (or restarted): its seq starts over.
             self._watchdog.reset_sequence()
         self._watchdog.on_status(status)
-        if status.state != "running":
+        if status.state == "running":
+            self._fault = False
+        else:
             self._cancel_armed("decoder_not_running")
             self._enter_safe_state()
 
@@ -221,6 +233,8 @@ class Adapter(ABC):
         if not self._watchdog.alive:
             self._cancel_armed("heartbeat_lost")
             return
+        if self._fault:
+            return  # stopped on an invalid message: wait for a running status
         if name != "rest" and command.confidence < self.min_confidence:
             return
         if not self._watchdog.accept(command):
