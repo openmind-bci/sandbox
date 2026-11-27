@@ -71,11 +71,16 @@ class EegRelay:
     Args:
         sink: Receives the JSON frames (from the relay thread).
         resolve_timeout: Seconds of each search for the stream.
+        source_id: Relay only the stream with this LSL ``source_id`` (when
+            several ``openmind-eeg`` streams run); ``None`` takes the first found.
     """
 
-    def __init__(self, sink: FrameSink, resolve_timeout: float = 2.0) -> None:
+    def __init__(
+        self, sink: FrameSink, resolve_timeout: float = 2.0, source_id: str | None = None
+    ) -> None:
         self._sink = sink
         self._resolve_timeout = resolve_timeout
+        self._source_id = source_id
         self._stop = threading.Event()
         self._thread = threading.Thread(target=self._run, name="eeg-relay", daemon=True)
         self.frames = 0
@@ -92,8 +97,10 @@ class EegRelay:
         import pylsl
 
         while not self._stop.is_set():
-            streams = pylsl.resolve_byprop("name", STREAM_NAME, 1, self._resolve_timeout)
-            streams = [s for s in streams if s.type() == STREAM_TYPE]
+            predicate = f"name='{STREAM_NAME}' and type='{STREAM_TYPE}'"
+            if self._source_id is not None:
+                predicate += f" and source_id='{self._source_id}'"
+            streams = pylsl.resolve_bypred(predicate, 1, self._resolve_timeout)
             if not streams:
                 continue
             inlet = pylsl.StreamInlet(streams[0], max_buflen=2)
