@@ -155,14 +155,43 @@ def test_action_needs_context(adapter: Recorder, feed: Feeder) -> None:
     assert adapter.commands == [("action", 0.95)]
 
 
-def test_invalid_payload_ignored(adapter: Recorder, feed: Feeder) -> None:
+@pytest.mark.parametrize("payload", [b"not json", b'{"v":1,"command":"fly"}'])
+def test_invalid_message_stops_until_running_status(
+    adapter: Recorder, feed: Feeder, payload: bytes
+) -> None:
+    # Same rule as the mock robot: stop, refuse commands until a valid running status.
     feed.status()
-    adapter.handle_message(topics.COMMANDS, b"not json")
-    adapter.handle_message(topics.COMMANDS, b'{"v":1,"command":"fly"}')
-    adapter.handle_message("other/topic", b"{}")
-    assert adapter.commands == []
     feed.command("forward")
-    assert len(adapter.commands) == 1
+    assert not adapter.stopped
+    adapter.handle_message(topics.COMMANDS, payload)
+    assert adapter.stopped and adapter.stops == 1
+    feed.command("forward")
+    assert adapter.commands == [("forward", 0.95)]  # refused
+    feed.status()
+    feed.command("forward")
+    assert adapter.commands == [("forward", 0.95), ("forward", 0.95)]
+    assert not adapter.stopped
+
+
+def test_invalid_message_cancels_an_armed_action(clock: Clock) -> None:
+    adapter = Recorder(clock, allow_action=True, confirm=True)
+    feed = Feeder(adapter, clock)
+    feed.status()
+    feed.command("action")
+    assert adapter.action_armed
+    adapter.handle_message(topics.STATUS, b"{}")
+    assert not adapter.action_armed
+    assert kinds(adapter)[-1] == "action_cancelled"
+    assert adapter.sent[-1].data == {"reason": "invalid_message"}  # type: ignore[union-attr]
+
+
+def test_message_on_another_topic_is_ignored(adapter: Recorder, feed: Feeder) -> None:
+    feed.status()
+    feed.command("forward")
+    adapter.handle_message("other/topic", b"{}")  # not addressed to the object
+    assert not adapter.stopped
+    feed.command("forward")
+    assert len(adapter.commands) == 2
 
 
 def test_failing_hook_stops_object(clock: Clock) -> None:

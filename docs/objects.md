@@ -19,7 +19,8 @@ treat it as an event, not as a held command.
 Objects that move apply the safety rules of the protocol themselves, so they stay
 safe even if the decoder crashes: stop 2 s after the last `running` status (and
 at once on any other state), ignore stale `seq`, stop on an invalid message or a
-lost broker.
+lost broker. After an invalid message, commands are refused until the next valid
+`running` status; the mock robot and `Adapter` follow the same rule.
 
 **Confidence thresholds, per command.** A command below its threshold is
 **ignored**: the object keeps doing what it does. `rest` has no threshold: it

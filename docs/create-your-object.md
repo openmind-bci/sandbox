@@ -17,7 +17,9 @@ and cannot be switched off by a subclass:
 - a command whose `seq` is not newer than the last one is ignored;
 - `action` is contextual: it only reaches you if `context_allows_action()` is
   true (default: false);
-- an invalid message is logged and ignored.
+- an invalid message on an OpenMind topic is logged and stops the object:
+  `stop()` is called and commands are refused until the next valid `running`
+  status, as on the mock robot. A message on another topic is ignored.
 
 ## Confirming `action` (optional)
 
@@ -35,10 +37,10 @@ second `action` within the window runs `on_action` and publishes
 `action_confirmed`. `rest` keeps it armed (`rest` is still applied): the
 decoder repeats `rest` every 0.5 s between the two gestures. A movement command
 (`left`, `right`, `forward`), a lost heartbeat, a decoder that is not
-`running`, a context that no longer allows the action, or the end of the window
-cancels it with `action_cancelled` (`reason`: `other_command`,
-`heartbeat_lost`, `decoder_not_running`, `context_lost`, `timeout`,
-`stopped`). The safety rules above still come first.
+`running`, an invalid message, a context that no longer allows the action, or the
+end of the window cancels it with `action_cancelled` (`reason`: `other_command`,
+`heartbeat_lost`, `decoder_not_running`, `invalid_message`, `context_lost`,
+`timeout`, `stopped`). The safety rules above still come first.
 
 Off by default. The wheeled robot does not use it: its `action` (a U-turn) is
 bounded and stopped by the obstacle sensor.

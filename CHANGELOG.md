@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `Adapter` stops on an invalid message instead of ignoring it, like the mock
+  robot: `stop()` is called, an armed `action` is cancelled (reason
+  `invalid_message`), and commands are refused until the next valid `running`
+  status. Messages on non-OpenMind topics are still ignored.
 - `Adapter` with `confirm_action=True`: `rest` no longer cancels an armed
   `action`. The decoder repeats `rest` every 0.5 s between the two gestures, so
   the second `action` could never confirm with a real decoder. Only a movement
