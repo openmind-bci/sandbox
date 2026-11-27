@@ -117,7 +117,7 @@ Pre-alpha: everything runs without hardware. See [CHANGELOG.md](CHANGELOG.md).
 | Guided calibration (bird scene) with markers to MQTT and LSL | available |
 | Live 3D brain and signal panels | available |
 | ESP32 robot firmware (built, not flashed) | available |
-| Adapter template for your own object | planned |
+| Adapter template for your own object (`template/adapter/`) | available |
 | Real robot validation | planned (phase C) |
 
 ## Installation
