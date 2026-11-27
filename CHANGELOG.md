@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the second `action` could never confirm with a real decoder. Only a movement
   command, a timeout, a lost heartbeat or a stop cancels it; the `rest` reason
   of `action_cancelled` is gone.
+- The source distribution ships the adapter template (`template/`): only its
+  README was included, so `tests/test_adapters.py` failed when run from the sdist.
 
 ### Added
 

@@ -67,7 +67,7 @@ packages = ["src/openmind_sandbox"]
 "config/robot.yaml" = "openmind_sandbox/data/robot.yaml"
 
 [tool.hatch.build.targets.sdist]
-include = ["src/", "tests/", "config/", "scenarios/", "examples/", "godot/data/", "README.md", "LICENSE", "CHANGELOG.md"]
+include = ["src/", "tests/", "config/", "scenarios/", "examples/", "template/", "godot/data/", "README.md", "LICENSE", "CHANGELOG.md"]
 
 # --- Lint & format ---------------------------------------------------------
 
