@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+import uuid
 
 import pytest
 
@@ -24,11 +25,17 @@ def test_relay_reads_an_lsl_eeg_stream() -> None:
 
     from openmind_sandbox.eeg_relay import EegRelay
 
-    info = pylsl.StreamInfo("openmind-eeg", "EEG", 2, 250, pylsl.cf_float32, "test:relay")
-    channels = info.desc().append_child("channels")
-    for label in ("C3", "C4"):
-        channels.append_child("channel").append_child_value("label", label)
-    outlet = pylsl.StreamOutlet(info)
+    def eeg_outlet(source_id: str, labels: tuple[str, str]) -> pylsl.StreamOutlet:
+        info = pylsl.StreamInfo("openmind-eeg", "EEG", 2, 250, pylsl.cf_float32, source_id)
+        channels = info.desc().append_child("channels")
+        for label in labels:
+            channels.append_child("channel").append_child_value("label", label)
+        return pylsl.StreamOutlet(info)
+
+    # Another openmind-eeg stream on the machine (plug streaming, say) must not be picked.
+    other = eeg_outlet(f"test:other:{uuid.uuid4()}", ("Fp1", "O1"))
+    source_id = f"test:relay:{uuid.uuid4()}"
+    outlet = eeg_outlet(source_id, ("C3", "C4"))
     frames: list[dict[str, object]] = []
     lock = threading.Lock()
 
@@ -36,7 +43,7 @@ def test_relay_reads_an_lsl_eeg_stream() -> None:
         with lock:
             frames.append(json.loads(text))
 
-    relay = EegRelay(sink, resolve_timeout=1.0)
+    relay = EegRelay(sink, resolve_timeout=1.0, source_id=source_id)
     relay.start()
     try:
         assert relay.stream_found.wait(10)
@@ -48,5 +55,6 @@ def test_relay_reads_an_lsl_eeg_stream() -> None:
         relay.stop()
     with lock:
         received = [row for f in frames for row in f["samples"]]  # type: ignore[attr-defined]
-    assert frames and frames[0]["labels"] == ["C3", "C4"]
+    del other
+    assert frames and all(f["labels"] == ["C3", "C4"] for f in frames)
     assert len(received) >= 200
