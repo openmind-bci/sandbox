@@ -45,7 +45,7 @@ end of the window cancels it with `action_cancelled` (`reason`: `other_command`,
 **How much time the user has.** With OpenMind Core, `action` is a double jaw
 clench, recognised about 0.15 s after the second clench ends. After recognising
 one, the detector ignores clenches for 1 s, and a double clench takes about 1 s to
-perform (two clenches of 0.2-0.4 s with a release of at least 0.3 s). So the
+perform (two clenches of 0.2-0.4 s with a release of at least 0.25 s). So the
 second `action` arrives at the earliest about 2 s after the first, and with the
 default `confirm_window_s=3.0` the user must start the second double clench
 between 1 s and about 2 s after the first was recognised. Raise
